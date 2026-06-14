@@ -1,0 +1,7 @@
+title: Sumarville
+description: Discord bot — legal documents
+theme: jekyll-theme-cayman
+
+# Internal working document — keep it out of the published site
+exclude:
+  - compliance-checklist.md
