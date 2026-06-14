@@ -18,7 +18,7 @@ The Bot keeps working during review, so the deadline is the thing to manage — 
 These appear as placeholders in the documents and the texts below. Resolve them before going live:
 
 - [x] **Bot name** — "Sumarville" (the bot's existing name; used throughout these docs). Make sure it matches the application name in the Developer Portal.
-- [x] **Governing-law country** — Belgium (set in [terms-of-service.md](./terms-of-service.md) §10).
+- [x] **Governing-law country** — Belgium (set in [terms-of-service.md](./terms-of-service.md) §11).
 - [x] **`privacy@wettinck.be`** — email forwarding to the owner's private inbox is set up.
 - [x] **Discord support server** — invite added to both legal docs: https://discord.gg/4Atn8t2 (confirm it is set to **never expire**).
 - [ ] **Publish via GitHub Pages** on `sumarville.wettinck.be` — enable Pages from `/docs`, set the custom domain + DNS (see Appendix B). Then paste the URLs into the portal (Section 3).

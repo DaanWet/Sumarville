@@ -60,31 +60,37 @@ THE BOT IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY KIND, 
 
 ---
 
-## 8. Limitation of liability
+## 8. Affiliation
+
+The Bot is an independent, fan-made project. It is **not affiliated with, endorsed by, or sponsored by Discord Inc.** Any reference to Discord or its trademarks is for descriptive purposes only; we claim no ownership of Discord's assets, trademarks, or other intellectual property. "Dungeons & Dragons" and related marks are the property of their respective owners; this Bot is an unofficial, non-commercial tool and is not affiliated with them.
+
+---
+
+## 9. Limitation of liability
 
 To the maximum extent permitted by law, the Bot Owner shall not be liable for any indirect, incidental, special, or consequential damages, or for any loss of data, arising out of or in connection with your use of (or inability to use) the Bot.
 
 ---
 
-## 9. Termination
+## 10. Termination
 
 You may stop using the Bot at any time by removing it from your server. We may suspend or terminate your access to the Bot at any time, in particular for a breach of these Terms.
 
 ---
 
-## 10. Governing law
+## 11. Governing law
 
 These Terms are governed by the laws of **Belgium**, without regard to conflict-of-law principles. Any disputes shall be subject to the competent courts of Belgium.
 
 ---
 
-## 11. Changes to these Terms
+## 12. Changes to these Terms
 
 We may update these Terms from time to time. Material changes will be reflected by updating the "Last updated" date above. Continued use of the Bot after a change constitutes acceptance of the revised Terms.
 
 ---
 
-## 12. Contact
+## 13. Contact
 
 - **General support:** [Discord support server](https://discord.gg/4Atn8t2)
 - **Privacy / data requests:** privacy@wettinck.be
