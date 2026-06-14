@@ -21,7 +21,7 @@ These appear as placeholders in the documents and the texts below. Resolve them 
 - [x] **Governing-law country** — Belgium (set in [terms-of-service.md](./terms-of-service.md) §10).
 - [x] **`privacy@wettinck.be`** — email forwarding to the owner's private inbox is set up.
 - [x] **Discord support server** — invite added to both legal docs: https://discord.gg/4Atn8t2 (confirm it is set to **never expire**).
-- [ ] **Publish via GitHub Pages** — enable Pages from `/docs` to get the public URLs (see Appendix B). Then paste them into the portal (Section 3).
+- [ ] **Publish via GitHub Pages** on `sumarville.wettinck.be` — enable Pages from `/docs`, set the custom domain + DNS (see Appendix B). Then paste the URLs into the portal (Section 3).
 
 ---
 
@@ -44,8 +44,8 @@ These appear as placeholders in the documents and the texts below. Resolve them 
 
 - [ ] Publish **Privacy Policy** ([privacy-policy.md](./privacy-policy.md)) and **Terms of Service** ([terms-of-service.md](./terms-of-service.md)) via GitHub Pages (Appendix B).
 - [ ] In **Developer Portal → your application → General Information**, paste:
-  - **Privacy Policy URL:** `https://daanwet.github.io/DnD_Discord_Bot/privacy-policy.html`
-  - **Terms of Service URL:** `https://daanwet.github.io/DnD_Discord_Bot/terms-of-service.html`
+  - **Privacy Policy URL:** `https://sumarville.wettinck.be/privacy-policy.html`
+  - **Terms of Service URL:** `https://sumarville.wettinck.be/terms-of-service.html`
 
 ---
 
@@ -93,31 +93,33 @@ You must justify **each** privileged intent with a concrete use case and describ
 > **Retention:** retained while the bot is present in the server; deleted when the bot is removed, or upon a verified erasure request, without undue delay and within 30 days.
 > **Sharing:** never sold or shared with third parties; processed only to provide the bot's features.
 > **User rights:** users may request access to or deletion of their data via privacy@wettinck.be.
-> **Policy:** full Privacy Policy published at https://daanwet.github.io/DnD_Discord_Bot/privacy-policy.html.
+> **Policy:** full Privacy Policy published at https://sumarville.wettinck.be/privacy-policy.html.
 
 ---
 
 ## Appendix B — Publishing via GitHub Pages
 
-The legal pages live in the **`docs/`** folder (`docs/privacy-policy.md`, `docs/terms-of-service.md`, `docs/index.md`, `docs/_config.yml`). Serving Pages from `/docs` publishes **only** these pages — never `src/` or `Data.json`.
+The legal pages live in the **`docs/`** folder (`docs/privacy-policy.md`, `docs/terms-of-service.md`, `docs/index.md`, `docs/_config.yml`, `docs/CNAME`). Serving Pages from `/docs` publishes **only** these pages — never `src/` or `Data.json`. The site is hosted on the custom domain **`sumarville.wettinck.be`**.
 
-**One-time setup (you do this on github.com):**
+**Setup (do these on github.com / your DNS):**
 
-1. Commit and push the `docs/` folder to the `master` branch.
-2. Go to **GitHub → repo → Settings → Pages**.
-3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
-4. Set **Branch** = `master` and **Folder** = `/docs`, then click **Save**.
-5. Wait ~1–2 minutes for the first build. Refresh the Pages settings page; it shows the live URL.
+1. Push `master` (the `docs/` folder must be on GitHub).
+2. *(Optional, decided)* Rename the repo: **Settings → General → Repository name → `Sumarville` → Rename**. GitHub auto-redirects old links. Afterwards update your local remote — see the note below. (With the custom domain the repo name does not appear in the public URLs.)
+3. **Settings → Pages → Build and deployment → Source** → **Deploy from a branch** → **Branch** = `master`, **Folder** = `/docs` → **Save**.
+4. **DNS** (at the wettinck.be DNS provider, e.g. Cloudflare): add a **CNAME** record — name `sumarville`, target `daanwet.github.io` (no repo path), proxy **DNS only** (grey cloud).
+5. **Settings → Pages → Custom domain** → `sumarville.wettinck.be` → **Save**. GitHub picks up the `docs/CNAME` file and runs a DNS check.
+6. When the DNS check is green, tick **Enforce HTTPS** (certificate can take a few minutes up to 24h).
 
 **Resulting public URLs (HTTPS):**
 
-- Landing: `https://daanwet.github.io/DnD_Discord_Bot/`
-- Privacy Policy: `https://daanwet.github.io/DnD_Discord_Bot/privacy-policy.html`
-- Terms of Service: `https://daanwet.github.io/DnD_Discord_Bot/terms-of-service.html`
+- Landing: `https://sumarville.wettinck.be/`
+- Privacy Policy: `https://sumarville.wettinck.be/privacy-policy.html`
+- Terms of Service: `https://sumarville.wettinck.be/terms-of-service.html`
 
 > These are already filled into Section 3 and Appendix A.2. The `_config.yml` applies a theme (Cayman) so the pages render as styled HTML, and excludes this checklist from the published site.
 
-> **Later:** to use your own domain instead, add a `CNAME` file to `docs/` with e.g. `bot.wettinck.be` and point a DNS record at GitHub Pages — then re-use the same URLs on your domain.
+> **After renaming the repo**, update the local git remote:
+> `git remote set-url origin https://github.com/DaanWet/Sumarville.git`
 
 ---
 
