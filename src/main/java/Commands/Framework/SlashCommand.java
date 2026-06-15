@@ -14,9 +14,6 @@ public interface SlashCommand {
     /** Stable namespace for this command's component ids (e.g. "character"). */
     String getId();
 
-    /** Top-level command names this handler responds to (e.g. ["d4", ..., "roll"]). */
-    List<String> getCommandNames();
-
     /** Registration payload (one entry per top-level command). */
     List<SlashCommandData> getCommandData();
 

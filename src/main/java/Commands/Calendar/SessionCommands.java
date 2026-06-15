@@ -1,5 +1,6 @@
 package Commands.Calendar;
 
+import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.CalendarHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -28,11 +29,6 @@ public class SessionCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("session");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("session", "Manage D&D sessions")
                 .addSubcommands(
@@ -48,11 +44,8 @@ public class SessionCommands implements SlashCommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Guild guild = event.getGuild();
-        if (guild == null) {
-            event.reply("This command only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         CalendarHandler calendar = new CalendarHandler(guild);
         switch (event.getSubcommandName()) {
             case "add" -> add(event, guild, calendar);

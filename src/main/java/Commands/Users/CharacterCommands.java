@@ -1,5 +1,6 @@
 package Commands.Users;
 
+import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.CharacterHandler;
 import Players.DM;
@@ -37,11 +38,6 @@ public class CharacterCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("character");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("character", "Manage character sheets")
                 .addSubcommands(
@@ -62,11 +58,8 @@ public class CharacterCommands implements SlashCommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Guild guild = event.getGuild();
-        if (guild == null) {
-            event.reply("This command only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         switch (event.getSubcommandName()) {
             case "create" -> create(event, guild);
             case "edit" -> edit(event, guild);
@@ -79,13 +72,13 @@ public class CharacterCommands implements SlashCommand {
     private void create(SlashCommandInteractionEvent event, Guild guild) {
         boolean asNpc = event.getOption("as_npc", false, OptionMapping::getAsBoolean);
         Member member = event.getMember();
-        CharacterHandler handler = new CharacterHandler(guild);
 
         if (!asNpc) {
-            if (member != null && isDm(member, guild)) {
+            if (member != null && new DM(guild).isHeldBy(member)) {
                 event.reply("Character creation cancelled — you are the DM.").setEphemeral(true).queue();
                 return;
             }
+            CharacterHandler handler = new CharacterHandler(guild);
             if (member != null && handler.getCharacter(member.getId(), "userid") != null) {
                 event.reply("You already have a character. Overwrite it?")
                         .setEphemeral(true)
@@ -130,12 +123,10 @@ public class CharacterCommands implements SlashCommand {
 
     @Override
     public void onModal(ModalInteractionEvent event) {
-        Guild guild = event.getGuild();
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         Member member = event.getMember();
-        if (guild == null || member == null) {
-            event.reply("This only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        if (member == null) return;
         boolean asNpc = event.getModalId().equals("character:create:npc");
         String name = event.getValue("name").getAsString();
         String picture = event.getValue("picture") != null ? event.getValue("picture").getAsString() : "";
@@ -212,7 +203,7 @@ public class CharacterCommands implements SlashCommand {
             if (character == null) {
                 character = handler.getCharacter(target, "userid");
             }
-            list = character == null ? null : new ArrayList<>(Collections.singletonList(character));
+            list = character == null ? null : List.of(character);
         }
         if (list == null) {
             event.reply("No character found for " + target).setEphemeral(true).queue();
@@ -229,16 +220,11 @@ public class CharacterCommands implements SlashCommand {
             eb.setTitle("Players");
             for (Map<String, String> c : list) {
                 String userid = c.get("userid");
-                String who = userid.isEmpty() ? "NPC"
-                        : (guild.getMemberById(userid) != null ? guild.getMemberById(userid).getAsMention() : "Unknown");
+                Member m = userid.isEmpty() ? null : guild.getMemberById(userid);
+                String who = userid.isEmpty() ? "NPC" : (m != null ? m.getAsMention() : "Unknown");
                 eb.addField(c.get("name"), who, true);
             }
         }
         event.replyEmbeds(eb.build()).queue();
-    }
-
-    private boolean isDm(Member member, Guild guild) {
-        var dmRole = new DM(guild).getRole();
-        return dmRole != null && member.getRoles().contains(dmRole);
     }
 }

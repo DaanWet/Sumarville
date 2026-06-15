@@ -1,5 +1,6 @@
 package Commands.Food;
 
+import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.FoodHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -25,11 +26,6 @@ public class FoodCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("food");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("food", "Manage the lunch list")
                 .addSubcommands(
@@ -47,11 +43,8 @@ public class FoodCommands implements SlashCommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Guild guild = event.getGuild();
-        if (guild == null) {
-            event.reply("This command only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         FoodHandler food = new FoodHandler(guild);
         switch (event.getSubcommandName()) {
             case "add" -> add(event, food);
@@ -108,9 +101,8 @@ public class FoodCommands implements SlashCommand {
             eb.addField("Food", "The lunch-list is empty", true);
         } else {
             StringBuilder sb = new StringBuilder();
-            List<Map<String, String>> items = new ArrayList<>(list);
-            for (int i = 0; i < items.size(); i++) {
-                sb.append(i == 0 ? "" : "\n").append(items.get(i).get("Name")).append(" ").append(items.get(i).get("Emoji"));
+            for (int i = 0; i < list.size(); i++) {
+                sb.append(i == 0 ? "" : "\n").append(list.get(i).get("Name")).append(" ").append(list.get(i).get("Emoji"));
             }
             eb.addField("Food", sb.toString(), true);
         }

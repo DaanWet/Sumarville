@@ -49,20 +49,21 @@ public class SessionReminder {
 
         NPCMessageHandler npch = new NPCMessageHandler(g);
         ArrayList<Map<String, String>> messages = npch.getSpecificMessages();
-        if (messages.size() == 0) {
+        if (messages.isEmpty()) {
             messages = npch.getBasicMessages();
         }
-        int i = messages.size() > 0 ? random.nextInt(messages.size()) : -1;
+        int i = !messages.isEmpty() ? random.nextInt(messages.size()) : -1;
         EmbedBuilder eb = new EmbedBuilder();
         String name = i != -1 ? messages.get(i).get("npc") : "";
         String custommessage = i != -1 ? messages.get(i).get("message") : "It's time to go on an adventure!";
         eb.addField(custommessage, "Don't forget our session tomorrow!", false);
 
         CharacterHandler chh = new CharacterHandler(g);
-        if (!name.equals("") && !chh.getPicture(name, "name").equals("")) {
-            eb.setAuthor(name, chh.getPicture(name, "name"), chh.getPicture(name, "name"));
+        String pic = name.isEmpty() ? "" : chh.getPicture(name, "name");
+        if (!name.isEmpty() && !pic.isEmpty()) {
+            eb.setAuthor(name, pic, pic);
         } else {
-            eb.setAuthor(!name.equals("") ? name : g.getSelfMember().getEffectiveName());
+            eb.setAuthor(!name.isEmpty() ? name : g.getSelfMember().getEffectiveName());
         }
 
         TextChannel ch = g.getTextChannelById(new ConfigHandler(g).getChannel("CalendarChannel"));

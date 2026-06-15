@@ -25,11 +25,6 @@ public class HelpCommand implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("help");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("help", "Shows all Sumarville commands"));
     }

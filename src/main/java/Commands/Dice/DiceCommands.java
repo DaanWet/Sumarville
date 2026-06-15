@@ -26,16 +26,6 @@ public class DiceCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        List<String> names = new ArrayList<>();
-        for (int s : DICE) {
-            names.add("d" + s);
-        }
-        names.add("roll");
-        return names;
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         List<SlashCommandData> data = new ArrayList<>();
         for (int s : DICE) {
@@ -104,9 +94,8 @@ public class DiceCommands implements SlashCommand {
         if (sides == 100) {
             return "https://www.dnddice.com/media/wysiwyg/d10_.jpg";
         }
-        if (sides == 4 || sides == 6 || sides == 8 || sides == 10 || sides == 12 || sides == 20) {
-            return "https://www.dnddice.com/media/wysiwyg/d" + sides + ".jpg";
-        }
-        return null;
+        return java.util.stream.IntStream.of(DICE).anyMatch(d -> d == sides)
+                ? "https://www.dnddice.com/media/wysiwyg/d" + sides + ".jpg"
+                : null;
     }
 }

@@ -22,11 +22,6 @@ public class DmCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("dm");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("dm", "Claim or pass the Dungeon Master role")
                 .addSubcommands(

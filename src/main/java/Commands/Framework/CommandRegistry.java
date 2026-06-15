@@ -16,8 +16,8 @@ public class CommandRegistry {
     public void register(SlashCommand cmd) {
         commands.add(cmd);
         byId.put(cmd.getId(), cmd);
-        for (String name : cmd.getCommandNames()) {
-            byCommandName.put(name, cmd);
+        for (SlashCommandData data : cmd.getCommandData()) {
+            byCommandName.put(data.getName(), cmd);
         }
     }
 

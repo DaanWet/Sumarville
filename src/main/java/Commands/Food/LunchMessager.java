@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +33,20 @@ public class LunchMessager {
         if (ch == null) {
             return;
         }
-        ScheduledFuture<?> task = ch.sendMessage(getFood(date, g)).queueAfter(
+        List<Map<String, String>> foodList = new FoodHandler(g).getFood();
+        List<String> emojis = new ArrayList<>();
+        foodList.forEach(f -> emojis.add(f.get("Emoji")));
+        ScheduledFuture<?> task = ch.sendMessage(buildText(date, foodList)).queueAfter(
                 diff > 0 ? diff : 0, TimeUnit.MILLISECONDS,
-                message -> getEmojis(g).forEach(s -> message.addReaction(Emoji.fromFormatted(s)).queue()));
+                message -> emojis.forEach(s -> message.addReaction(Emoji.fromFormatted(s)).queue()));
         map.put(key(g.getId(), date), task);
+    }
+
+    private static String buildText(LocalDateTime date, List<Map<String, String>> foodList) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Wat eten we ?").append(date != null ? " Session: " + sdf.format(date) : "");
+        foodList.forEach(food -> sb.append("\n").append(food.get("Name")).append(": ").append(food.get("Emoji")));
+        return sb.toString();
     }
 
     public static void cancelMessage(String guildId, LocalDateTime date) {
@@ -44,20 +55,5 @@ public class LunchMessager {
         if (task != null) {
             task.cancel(false);
         }
-    }
-
-    private static String getFood(LocalDateTime date, Guild g) {
-        FoodHandler f = new FoodHandler(g);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Wat eten we ?").append(date != null ? " Session: " + sdf.format(date) : "");
-        f.getFood().forEach(food -> sb.append("\n").append(food.get("Name")).append(": ").append(food.get("Emoji")));
-        return sb.toString();
-    }
-
-    private static ArrayList<String> getEmojis(Guild g) {
-        FoodHandler f = new FoodHandler(g);
-        ArrayList<String> emoji = new ArrayList<>();
-        f.getFood().forEach(s -> emoji.add(s.get("Emoji")));
-        return emoji;
     }
 }

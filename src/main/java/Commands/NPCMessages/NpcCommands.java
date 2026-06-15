@@ -1,5 +1,6 @@
 package Commands.NPCMessages;
 
+import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.NPCMessageHandler;
 import Players.DM;
@@ -27,11 +28,6 @@ public class NpcCommands implements SlashCommand {
     }
 
     @Override
-    public List<String> getCommandNames() {
-        return List.of("npc");
-    }
-
-    @Override
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("npc", "Manage NPC messages")
                 .addSubcommands(
@@ -50,11 +46,8 @@ public class NpcCommands implements SlashCommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Guild guild = event.getGuild();
-        if (guild == null) {
-            event.reply("This command only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         switch (event.getSubcommandName()) {
             case "add" -> add(event, guild);
             case "remove" -> remove(event, guild);
@@ -69,7 +62,7 @@ public class NpcCommands implements SlashCommand {
         String type = event.getOption("type", "Basic", OptionMapping::getAsString);
         boolean isPrivate = event.getOption("private", false, OptionMapping::getAsBoolean);
 
-        if (("Specific".equals(type) || isPrivate) && !isDm(event.getMember(), guild)) {
+        if (("Specific".equals(type) || isPrivate) && !new DM(guild).isHeldBy(event.getMember())) {
             event.reply("Only the DM can add specific/private NPC messages.").setEphemeral(true).queue();
             return;
         }
@@ -98,13 +91,5 @@ public class NpcCommands implements SlashCommand {
             eb.addField(name != null && !name.isEmpty() ? name : "Sumarville", m.get("message"), false);
         }
         event.replyEmbeds(eb.build()).queue();
-    }
-
-    private boolean isDm(Member member, Guild guild) {
-        if (member == null) {
-            return false;
-        }
-        Role dmRole = new DM(guild).getRole();
-        return dmRole != null && member.getRoles().contains(dmRole);
     }
 }

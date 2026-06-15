@@ -1,5 +1,6 @@
 package Commands;
 
+import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.ConfigHandler;
 import net.dv8tion.jda.api.Permission;
@@ -21,11 +22,6 @@ public class ConfigCommands implements SlashCommand {
     @Override
     public String getId() {
         return "config";
-    }
-
-    @Override
-    public List<String> getCommandNames() {
-        return List.of("config");
     }
 
     @Override
@@ -51,11 +47,8 @@ public class ConfigCommands implements SlashCommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Guild guild = event.getGuild();
-        if (guild == null) {
-            event.reply("This command only works in a server.").setEphemeral(true).queue();
-            return;
-        }
+        Guild guild = Interactions.requireGuild(event);
+        if (guild == null) return;
         ConfigHandler config = new ConfigHandler(guild);
         String setting = event.getOption("setting").getAsString();
 
