@@ -1,6 +1,6 @@
 package Players;
 
-import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.api.entities.Role;
 
 public abstract class Person {
 

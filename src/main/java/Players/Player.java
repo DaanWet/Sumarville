@@ -1,20 +1,17 @@
 package Players;
 
-
 import DataHandlers.ConfigHandler;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.managers.GuildController;
-import net.dv8tion.jda.core.requests.restaction.RoleAction;
+import net.dv8tion.jda.api.entities.Guild;
 
-import java.awt.*;
+import java.awt.Color;
 
 public class Player extends Person {
 
     public Player(Guild g) {
-        GuildController gc = g.getController();
         String playerId = new ConfigHandler(g).getPlayerRoleID();
-        if (playerId.equals("0")){
-            gc.createRole().setColor(Color.orange).setName("Dungeon Delvers").queue(role -> this.role = role);
+        if (playerId.equals("0")) {
+            // .complete() blocks until the role exists, fixing the old async NPE/role-spam race.
+            this.role = g.createRole().setColor(Color.orange).setName("Dungeon Delvers").complete();
             new ConfigHandler(g).setConfig(this.role.getId(), "Player");
         } else {
             this.role = g.getRoleById(playerId);
