@@ -1,5 +1,6 @@
 package Commands.Calendar;
 
+import Commands.Food.LunchMessager;
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
 import DataHandlers.CalendarHandler;
@@ -83,6 +84,7 @@ public class SessionCommands implements SlashCommand {
             new ArrayList<>(calendar.getSessions(true)).forEach(d -> {
                 calendar.removeSession(d);
                 SessionReminder.cancelSession(guild.getId(), d);
+                LunchMessager.cancelMessage(guild.getId(), d);
             });
             event.reply("Successfully removed all sessions.").queue();
             return;
@@ -115,6 +117,7 @@ public class SessionCommands implements SlashCommand {
         }
         calendar.removeSession(target);
         SessionReminder.cancelSession(guild.getId(), target);
+        LunchMessager.cancelMessage(guild.getId(), target);
         event.reply("Successfully removed the session on " + dates.format(target)).queue();
     }
 

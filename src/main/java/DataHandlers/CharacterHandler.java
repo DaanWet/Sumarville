@@ -76,7 +76,8 @@ public class CharacterHandler extends DataHandler {
     }
 
     public String getPicture(String name, String type){
-        return getCharacter(name, type).getOrDefault("picture", "");
+        Map<String, String> character = getCharacter(name, type);
+        return character == null ? "" : character.getOrDefault("picture", "");
     }
 
 }

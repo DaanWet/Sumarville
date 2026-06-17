@@ -23,24 +23,10 @@ public class SessionReminder {
 
     private static final DateTimeFormatter sdf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Map<String, ScheduledFuture<?>> map = new HashMap<>();
-    private static final Map<String, ScheduledFuture<?>> mememap = new HashMap<>();
     private static final Random random = new Random();
 
     private static String key(String guildId, LocalDateTime date) {
         return guildId + "|" + date.format(sdf);
-    }
-
-    public static void makeMemeMessage(LocalDateTime date, Guild g) {
-        LocalDateTime mDate = date.minusHours(24);
-        long mdiff = ChronoUnit.MILLIS.between(LocalDateTime.now(), mDate);
-        TextChannel mch = g.getTextChannelById(new ConfigHandler(g).getChannel("MemeChannel"));
-        if (mch == null) {
-            return;
-        }
-        ScheduledFuture<?> mtask = mch.sendMessage(
-                "`24h Left to post your meme to make a chance to get a special reward!`")
-                .queueAfter(mdiff > 0 ? mdiff : 0, TimeUnit.MILLISECONDS);
-        mememap.put(key(g.getId(), date), mtask);
     }
 
     public static void makeMessage(LocalDateTime date, Guild g) {
@@ -84,10 +70,6 @@ public class SessionReminder {
         ScheduledFuture<?> task = map.remove(k);
         if (task != null) {
             task.cancel(false);
-        }
-        ScheduledFuture<?> meme = mememap.remove(k);
-        if (meme != null) {
-            meme.cancel(false);
         }
     }
 

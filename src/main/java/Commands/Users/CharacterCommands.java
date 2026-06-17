@@ -25,8 +25,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.modals.Modal;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -131,7 +130,7 @@ public class CharacterCommands implements SlashCommand {
         String name = event.getValue("name").getAsString();
         String picture = event.getValue("picture") != null ? event.getValue("picture").getAsString() : "";
 
-        Map<String, String> sheet = new java.util.HashMap<>();
+        Map<String, String> sheet = new HashMap<>();
         sheet.put("userid", asNpc ? "" : member.getId());
         sheet.put("name", name);
         sheet.put("picture", picture);
