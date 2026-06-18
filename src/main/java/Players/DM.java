@@ -1,24 +1,18 @@
 package Players;
 
 import DataHandlers.ConfigHandler;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.managers.GuildController;
-import net.dv8tion.jda.core.requests.restaction.RoleAction;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 
-import java.awt.*;
-
+import java.awt.Color;
 
 public class DM extends Person {
 
-    public DM(Guild g){
-        GuildController guildController = g.getController();
-        String DmID = new ConfigHandler(g).getDMRoleID();
-        if (DmID.equals("0")) {
-            guildController.createRole().setColor(Color.MAGENTA).setName("DM").queue(role1 -> this.role = role1);
-            new ConfigHandler(g).setConfig(this.role.getId(), "DM");
-        } else {
-            this.role = g.getRoleById(DmID);
-        }
+    public DM(Guild g) {
+        resolveOrCreateRole(g, new ConfigHandler(g).getDMRoleID(), "DM", Color.MAGENTA, "DM");
+    }
 
+    public boolean isHeldBy(Member member) {
+        return member != null && role != null && member.getRoles().contains(role);
     }
 }
