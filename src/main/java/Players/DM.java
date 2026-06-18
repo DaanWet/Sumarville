@@ -9,13 +9,7 @@ import java.awt.Color;
 public class DM extends Person {
 
     public DM(Guild g) {
-        String dmId = new ConfigHandler(g).getDMRoleID();
-        if (dmId.equals("0")) {
-            this.role = g.createRole().setColor(Color.MAGENTA).setName("DM").complete();
-            new ConfigHandler(g).setConfig(this.role.getId(), "DM");
-        } else {
-            this.role = g.getRoleById(dmId);
-        }
+        resolveOrCreateRole(g, new ConfigHandler(g).getDMRoleID(), "DM", Color.MAGENTA, "DM");
     }
 
     public boolean isHeldBy(Member member) {
