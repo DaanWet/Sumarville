@@ -35,6 +35,11 @@ class DatabaseTest {
             }));
             List<String> names = db.query("SELECT name FROM food WHERE guild_id = ?", rs -> rs.getString(1), "g1");
             assertTrue(names.isEmpty());
+            // autoCommit must be restored after rollback, else later writes silently never persist
+            long id2 = db.insert("INSERT INTO food(guild_id, name, emoji) VALUES(?,?,?)", "g1", "B", "b");
+            assertTrue(id2 > 0);
+            List<String> after = db.query("SELECT name FROM food WHERE guild_id = ?", rs -> rs.getString(1), "g1");
+            assertEquals(List.of("B"), after);
         }
     }
 }

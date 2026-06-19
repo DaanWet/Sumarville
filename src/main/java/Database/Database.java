@@ -132,15 +132,15 @@ public class Database implements AutoCloseable {
                 conn.setAutoCommit(false);
                 work.run();
                 conn.commit();
-            } catch (RuntimeException e) {
+            } catch (Throwable t) {
                 try {
                     conn.rollback();
                 } catch (SQLException ex) {
-                    e.addSuppressed(ex);
+                    t.addSuppressed(ex);
                 }
-                throw e;
-            } catch (SQLException e) {
-                throw new RuntimeException("Transaction failed", e);
+                if (t instanceof RuntimeException re) throw re;
+                if (t instanceof Error err) throw err;
+                throw new RuntimeException("Transaction failed", t);
             } finally {
                 try {
                     conn.setAutoCommit(true);
