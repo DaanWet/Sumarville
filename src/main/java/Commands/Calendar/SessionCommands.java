@@ -3,7 +3,8 @@ package Commands.Calendar;
 import Commands.Food.LunchMessager;
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
-import DataHandlers.CalendarHandler;
+import Database.Repositories;
+import Database.SessionRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -23,6 +24,11 @@ import java.util.List;
 public class SessionCommands implements SlashCommand {
 
     private final SessionDateParser dates = new SessionDateParser();
+    private final Repositories repos;
+
+    public SessionCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -47,16 +53,16 @@ public class SessionCommands implements SlashCommand {
     public void execute(SlashCommandInteractionEvent event) {
         Guild guild = Interactions.requireGuild(event);
         if (guild == null) return;
-        CalendarHandler calendar = new CalendarHandler(guild);
+        SessionRepository calendar = repos.sessions();
         switch (event.getSubcommandName()) {
             case "add" -> add(event, guild, calendar);
             case "remove" -> remove(event, guild, calendar);
-            case "list" -> list(event, calendar);
+            case "list" -> list(event, guild, calendar);
             default -> event.reply("Unknown subcommand.").setEphemeral(true).queue();
         }
     }
 
-    private void add(SlashCommandInteractionEvent event, Guild guild, CalendarHandler calendar) {
+    private void add(SlashCommandInteractionEvent event, Guild guild, SessionRepository calendar) {
         String raw = event.getOption("date").getAsString();
         LocalDateTime date;
         try {
@@ -69,20 +75,20 @@ public class SessionCommands implements SlashCommand {
             event.reply("You cannot plan a session in the past.").setEphemeral(true).queue();
             return;
         }
-        if (calendar.getSessions(false).contains(date)) {
+        if (calendar.find(guild.getId(), false).contains(date)) {
             event.reply("There already is a session planned on " + raw).setEphemeral(true).queue();
             return;
         }
-        calendar.addSession(date);
-        SessionReminder.makeMessage(date, guild);
+        calendar.add(guild.getId(), date);
+        SessionReminder.makeMessage(date, guild, repos);
         event.reply("Successfully added a session on " + raw).queue();
     }
 
-    private void remove(SlashCommandInteractionEvent event, Guild guild, CalendarHandler calendar) {
+    private void remove(SlashCommandInteractionEvent event, Guild guild, SessionRepository calendar) {
         boolean all = event.getOption("all", false, OptionMapping::getAsBoolean);
         if (all) {
-            new ArrayList<>(calendar.getSessions(true)).forEach(d -> {
-                calendar.removeSession(d);
+            new ArrayList<>(calendar.find(guild.getId(), true)).forEach(d -> {
+                calendar.remove(guild.getId(), d);
                 SessionReminder.cancelSession(guild.getId(), d);
                 LunchMessager.cancelMessage(guild.getId(), d);
             });
@@ -100,12 +106,12 @@ public class SessionCommands implements SlashCommand {
                 event.reply("Usage: /session remove date:dd/MM/yyyy").setEphemeral(true).queue();
                 return;
             }
-            if (!calendar.getSessions(true).contains(target)) {
+            if (!calendar.find(guild.getId(), true).contains(target)) {
                 event.reply("There is no session on " + raw).setEphemeral(true).queue();
                 return;
             }
         } else if (index != null) {
-            List<LocalDateTime> upcoming = calendar.getSessions(false);
+            List<LocalDateTime> upcoming = calendar.find(guild.getId(), false);
             if (index < 1 || index > upcoming.size()) {
                 event.reply("There is no session #" + index).setEphemeral(true).queue();
                 return;
@@ -115,14 +121,14 @@ public class SessionCommands implements SlashCommand {
             event.reply("Provide a date, an index, or all:true.").setEphemeral(true).queue();
             return;
         }
-        calendar.removeSession(target);
+        calendar.remove(guild.getId(), target);
         SessionReminder.cancelSession(guild.getId(), target);
         LunchMessager.cancelMessage(guild.getId(), target);
         event.reply("Successfully removed the session on " + dates.format(target)).queue();
     }
 
-    private void list(SlashCommandInteractionEvent event, CalendarHandler calendar) {
-        List<LocalDateTime> sessions = calendar.getSessions(false);
+    private void list(SlashCommandInteractionEvent event, Guild guild, SessionRepository calendar) {
+        List<LocalDateTime> sessions = calendar.find(guild.getId(), false);
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.ORANGE);
         eb.addField("Next Session:", sessions.isEmpty() ? "No planned sessions yet" : dates.format(sessions.get(0)), true);

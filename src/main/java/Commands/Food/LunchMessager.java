@@ -1,7 +1,7 @@
 package Commands.Food;
 
-import DataHandlers.ConfigHandler;
-import DataHandlers.FoodHandler;
+import Database.Repositories;
+import Domain.FoodItem;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -26,26 +26,26 @@ public class LunchMessager {
         return guildId + "|" + (date == null ? "now" : date.format(sdf));
     }
 
-    public static void makeMessage(LocalDateTime date, Guild g) {
+    public static void makeMessage(LocalDateTime date, Guild g, Repositories repos) {
         LocalDateTime messagedate = (date == null) ? LocalDateTime.now() : date;
         long diff = ChronoUnit.MILLIS.between(LocalDateTime.now(), messagedate);
-        TextChannel ch = g.getTextChannelById(new ConfigHandler(g).getChannel("FoodChannel"));
+        TextChannel ch = repos.config().get(g.getId(), "FoodChannel").map(g::getTextChannelById).orElse(null);
         if (ch == null) {
             return;
         }
-        List<Map<String, String>> foodList = new FoodHandler(g).getFood();
+        List<FoodItem> foodList = repos.food().findAll(g.getId());
         List<String> emojis = new ArrayList<>();
-        foodList.forEach(f -> emojis.add(f.get("Emoji")));
+        foodList.forEach(f -> emojis.add(f.emoji()));
         ScheduledFuture<?> task = ch.sendMessage(buildText(date, foodList)).queueAfter(
                 diff > 0 ? diff : 0, TimeUnit.MILLISECONDS,
                 message -> emojis.forEach(s -> message.addReaction(Emoji.fromFormatted(s)).queue()));
         map.put(key(g.getId(), date), task);
     }
 
-    private static String buildText(LocalDateTime date, List<Map<String, String>> foodList) {
+    private static String buildText(LocalDateTime date, List<FoodItem> foodList) {
         StringBuilder sb = new StringBuilder();
         sb.append("Wat eten we ?").append(date != null ? " Session: " + sdf.format(date) : "");
-        foodList.forEach(food -> sb.append("\n").append(food.get("Name")).append(": ").append(food.get("Emoji")));
+        foodList.forEach(food -> sb.append("\n").append(food.name()).append(": ").append(food.emoji()));
         return sb.toString();
     }
 

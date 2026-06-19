@@ -2,7 +2,8 @@ package Commands.Users;
 
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
-import DataHandlers.CharacterHandler;
+import Database.Repositories;
+import Domain.CharacterSheet;
 import Players.DM;
 import Players.Player;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -25,11 +26,16 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.modals.Modal;
 
 import java.awt.Color;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 public class CharacterCommands implements SlashCommand {
+
+    private final Repositories repos;
+
+    public CharacterCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -73,12 +79,11 @@ public class CharacterCommands implements SlashCommand {
         Member member = event.getMember();
 
         if (!asNpc) {
-            if (member != null && new DM(guild).isHeldBy(member)) {
+            if (member != null && new DM(guild, repos.config()).isHeldBy(member)) {
                 event.reply("Character creation cancelled — you are the DM.").setEphemeral(true).queue();
                 return;
             }
-            CharacterHandler handler = new CharacterHandler(guild);
-            if (member != null && handler.getCharacter(member.getId(), "userid") != null) {
+            if (member != null && repos.characters().findByUserId(guild.getId(), member.getId()).isPresent()) {
                 event.reply("You already have a character. Overwrite it?")
                         .setEphemeral(true)
                         .addComponents(ActionRow.of(
@@ -114,7 +119,8 @@ public class CharacterCommands implements SlashCommand {
         } else if (id.equals("character:overwrite:self")) {
             Guild guild = event.getGuild();
             if (guild != null && event.getMember() != null) {
-                new CharacterHandler(guild).removeCharacter(event.getMember().getId(), "userid");
+                repos.characters().findByUserId(guild.getId(), event.getMember().getId())
+                        .ifPresent(c -> repos.characters().remove(c.id()));
             }
             event.replyModal(buildModal(false)).queue();
         }
@@ -130,14 +136,9 @@ public class CharacterCommands implements SlashCommand {
         String name = event.getValue("name").getAsString();
         String picture = event.getValue("picture") != null ? event.getValue("picture").getAsString() : "";
 
-        Map<String, String> sheet = new HashMap<>();
-        sheet.put("userid", asNpc ? "" : member.getId());
-        sheet.put("name", name);
-        sheet.put("picture", picture);
-
-        new CharacterHandler(guild).addCharacter(sheet);
+        repos.characters().add(guild.getId(), asNpc ? null : member.getId(), name, picture);
         if (!asNpc) {
-            guild.addRoleToMember(member, new Player(guild).getRole()).queue();
+            guild.addRoleToMember(member, new Player(guild, repos.config()).getRole()).queue();
             guild.modifyNickname(member, name).queue();
         }
 
@@ -153,16 +154,16 @@ public class CharacterCommands implements SlashCommand {
         String name = event.getOption("name").getAsString();
         String attribute = event.getOption("attribute").getAsString();
         String value = event.getOption("value").getAsString();
-        CharacterHandler handler = new CharacterHandler(guild);
-        if (handler.getCharacter(name, "name") == null) {
+        Optional<CharacterSheet> existing = repos.characters().findByName(guild.getId(), name);
+        if (existing.isEmpty()) {
             event.reply("No character named " + name).setEphemeral(true).queue();
             return;
         }
-        handler.editCharacter(name, attribute, value);
+        repos.characters().editAttribute(existing.get().id(), attribute, value);
         if (attribute.equals("name")) {
-            Map<String, String> updated = handler.getCharacter(value, "name");
-            if (updated != null && !updated.get("userid").isEmpty()) {
-                Member m = guild.getMemberById(updated.get("userid"));
+            String userId = existing.get().userId();
+            if (userId != null) {
+                Member m = guild.getMemberById(userId);
                 if (m != null) {
                     guild.modifyNickname(m, value).queue();
                 }
@@ -173,15 +174,15 @@ public class CharacterCommands implements SlashCommand {
 
     private void remove(SlashCommandInteractionEvent event, Guild guild) {
         String name = event.getOption("name").getAsString();
-        CharacterHandler handler = new CharacterHandler(guild);
-        Map<String, String> character = handler.getCharacter(name, "name");
-        if (character == null) {
+        Optional<CharacterSheet> character = repos.characters().findByName(guild.getId(), name);
+        if (character.isEmpty()) {
             event.reply("No character named " + name).setEphemeral(true).queue();
             return;
         }
-        handler.removeCharacter(name, "name");
-        if (!character.get("userid").isEmpty()) {
-            Member m = guild.getMemberById(character.get("userid"));
+        repos.characters().remove(character.get().id());
+        String userId = character.get().userId();
+        if (userId != null) {
+            Member m = guild.getMemberById(userId);
             if (m != null) {
                 guild.modifyNickname(m, null).queue();
             }
@@ -191,18 +192,17 @@ public class CharacterCommands implements SlashCommand {
 
     private void show(SlashCommandInteractionEvent event, Guild guild) {
         String target = event.getOption("target", "all", OptionMapping::getAsString);
-        CharacterHandler handler = new CharacterHandler(guild);
-        List<Map<String, String>> list;
+        List<CharacterSheet> list;
         if (target.equalsIgnoreCase("all")) {
-            list = handler.getAllCharacters(false);
+            list = repos.characters().findAll(guild.getId(), false);
         } else if (target.equalsIgnoreCase("npc")) {
-            list = handler.getAllCharacters(true);
+            list = repos.characters().findAll(guild.getId(), true);
         } else {
-            Map<String, String> character = handler.getCharacter(target, "name");
-            if (character == null) {
-                character = handler.getCharacter(target, "userid");
+            Optional<CharacterSheet> character = repos.characters().findByName(guild.getId(), target);
+            if (character.isEmpty()) {
+                character = repos.characters().findByUserId(guild.getId(), target);
             }
-            list = character == null ? null : List.of(character);
+            list = character.map(List::of).orElse(null);
         }
         if (list == null) {
             event.reply("No character found for " + target).setEphemeral(true).queue();
@@ -211,17 +211,15 @@ public class CharacterCommands implements SlashCommand {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.ORANGE);
         if (list.size() == 1) {
-            for (Map.Entry<String, String> e : list.get(0).entrySet()) {
-                String key = e.getKey();
-                eb.addField(key.substring(0, 1).toUpperCase() + key.substring(1), e.getValue(), true);
-            }
+            CharacterSheet c = list.get(0);
+            eb.addField("Name", c.name(), true);
+            eb.addField("Picture", c.picture() == null || c.picture().isEmpty() ? "—" : c.picture(), true);
         } else {
             eb.setTitle("Players");
-            for (Map<String, String> c : list) {
-                String userid = c.get("userid");
-                Member m = userid.isEmpty() ? null : guild.getMemberById(userid);
-                String who = userid.isEmpty() ? "NPC" : (m != null ? m.getAsMention() : "Unknown");
-                eb.addField(c.get("name"), who, true);
+            for (CharacterSheet c : list) {
+                Member m = c.isNpc() ? null : guild.getMemberById(c.userId());
+                String who = c.isNpc() ? "NPC" : (m != null ? m.getAsMention() : "Unknown");
+                eb.addField(c.name(), who, true);
             }
         }
         event.replyEmbeds(eb.build()).queue();

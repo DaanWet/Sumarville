@@ -1,10 +1,9 @@
 package Commands.Calendar;
 
 import Commands.Food.LunchMessager;
-import DataHandlers.CalendarHandler;
-import DataHandlers.CharacterHandler;
-import DataHandlers.ConfigHandler;
-import DataHandlers.NPCMessageHandler;
+import Database.Repositories;
+import Domain.NpcMessage;
+import Domain.NpcMessageType;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -12,7 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -29,38 +28,38 @@ public class SessionReminder {
         return guildId + "|" + date.format(sdf);
     }
 
-    public static void makeMessage(LocalDateTime date, Guild g) {
+    public static void makeMessage(LocalDateTime date, Guild g, Repositories repos) {
         LocalDateTime messageDate = date.minusHours(6);
         long diff = ChronoUnit.MILLIS.between(LocalDateTime.now(), messageDate);
 
-        NPCMessageHandler npch = new NPCMessageHandler(g);
-        ArrayList<Map<String, String>> messages = npch.getSpecificMessages();
+        List<NpcMessage> messages = repos.npcMessages().findByType(g.getId(), NpcMessageType.SPECIFIC);
         if (messages.isEmpty()) {
-            messages = npch.getBasicMessages();
+            messages = repos.npcMessages().findByType(g.getId(), NpcMessageType.BASIC);
         }
         int i = !messages.isEmpty() ? random.nextInt(messages.size()) : -1;
         EmbedBuilder eb = new EmbedBuilder();
-        String name = i != -1 ? messages.get(i).get("npc") : "";
-        String custommessage = i != -1 ? messages.get(i).get("message") : "It's time to go on an adventure!";
+        String name = i != -1 ? messages.get(i).npc() : "";
+        String custommessage = i != -1 ? messages.get(i).message() : "It's time to go on an adventure!";
         eb.addField(custommessage, "Don't forget our session tomorrow!", false);
 
-        CharacterHandler chh = new CharacterHandler(g);
-        String pic = name.isEmpty() ? "" : chh.getPicture(name, "name");
-        if (!name.isEmpty() && !pic.isEmpty()) {
+        String pic = (name == null || name.isEmpty())
+                ? ""
+                : repos.characters().findByName(g.getId(), name).map(c -> c.picture() == null ? "" : c.picture()).orElse("");
+        if (name != null && !name.isEmpty() && !pic.isEmpty()) {
             eb.setAuthor(name, pic, pic);
         } else {
-            eb.setAuthor(!name.isEmpty() ? name : g.getSelfMember().getEffectiveName());
+            eb.setAuthor(name != null && !name.isEmpty() ? name : g.getSelfMember().getEffectiveName());
         }
 
-        TextChannel ch = g.getTextChannelById(new ConfigHandler(g).getChannel("CalendarChannel"));
+        TextChannel ch = repos.config().get(g.getId(), "CalendarChannel").map(g::getTextChannelById).orElse(null);
         if (ch == null) {
             return;
         }
         ScheduledFuture<?> task = ch.sendMessageEmbeds(eb.build()).queueAfter(
                 diff > 0 ? diff : 0, TimeUnit.MILLISECONDS,
                 message -> {
-                    LunchMessager.makeMessage(date, g);
-                    npch.clearSpecific();
+                    LunchMessager.makeMessage(date, g, repos);
+                    repos.npcMessages().clearSpecific(g.getId());
                 });
         map.put(key(g.getId(), date), task);
     }
@@ -73,17 +72,16 @@ public class SessionReminder {
         }
     }
 
-    public static void onRestart(Guild g) {
-        CalendarHandler calendarHandler = new CalendarHandler(g);
-        ArrayList<LocalDateTime> sessions = calendarHandler.getSessions(false);
+    public static void onRestart(Guild g, Repositories repos) {
+        List<LocalDateTime> sessions = repos.sessions().find(g.getId(), false);
         sessions.forEach(session -> {
             LocalDateTime messageDate = session.minusHours(4);
             long diff = ChronoUnit.MILLIS.between(LocalDateTime.now(), messageDate);
             long difffood = ChronoUnit.MILLIS.between(LocalDateTime.now(), session);
             if (diff > 0) {
-                makeMessage(session, g);
+                makeMessage(session, g, repos);
             } else if (difffood > 0) {
-                LunchMessager.makeMessage(session, g);
+                LunchMessager.makeMessage(session, g, repos);
             }
         });
     }

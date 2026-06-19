@@ -2,7 +2,7 @@ package Commands;
 
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
-import DataHandlers.ConfigHandler;
+import Database.Repositories;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -18,6 +18,12 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import java.util.List;
 
 public class ConfigCommands implements SlashCommand {
+
+    private final Repositories repos;
+
+    public ConfigCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -49,7 +55,6 @@ public class ConfigCommands implements SlashCommand {
     public void execute(SlashCommandInteractionEvent event) {
         Guild guild = Interactions.requireGuild(event);
         if (guild == null) return;
-        ConfigHandler config = new ConfigHandler(guild);
         String setting = event.getOption("setting").getAsString();
 
         if (event.getSubcommandName().equals("role")) {
@@ -58,7 +63,7 @@ public class ConfigCommands implements SlashCommand {
                 return;
             }
             Role role = event.getOption("value").getAsRole();
-            config.setConfig(role.getId(), setting);
+            repos.config().set(guild.getId(), setting, role.getId());
             event.reply(String.format("Set the %s role to %s", setting, role.getName())).queue();
         } else {
             if (!ConfigKeys.isChannelKey(setting)) {
@@ -66,7 +71,7 @@ public class ConfigCommands implements SlashCommand {
                 return;
             }
             GuildChannel channel = event.getOption("value").getAsChannel();
-            config.setConfig(channel.getId(), setting);
+            repos.config().set(guild.getId(), setting, channel.getId());
             event.reply(String.format("Set the %s to %s", setting, channel.getName())).queue();
         }
     }

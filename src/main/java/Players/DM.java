@@ -1,6 +1,6 @@
 package Players;
 
-import DataHandlers.ConfigHandler;
+import Database.ConfigRepository;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 
@@ -8,8 +8,8 @@ import java.awt.Color;
 
 public class DM extends Person {
 
-    public DM(Guild g) {
-        resolveOrCreateRole(g, new ConfigHandler(g).getDMRoleID(), "DM", Color.MAGENTA, "DM");
+    public DM(Guild g, ConfigRepository config) {
+        resolveOrCreateRole(g, config, "DM", "DM", Color.MAGENTA);
     }
 
     public boolean isHeldBy(Member member) {

@@ -2,7 +2,8 @@ package Commands.Food;
 
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
-import DataHandlers.FoodHandler;
+import Database.Repositories;
+import Domain.FoodItem;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -14,11 +15,15 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class FoodCommands implements SlashCommand {
+
+    private final Repositories repos;
+
+    public FoodCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -45,31 +50,31 @@ public class FoodCommands implements SlashCommand {
     public void execute(SlashCommandInteractionEvent event) {
         Guild guild = Interactions.requireGuild(event);
         if (guild == null) return;
-        FoodHandler food = new FoodHandler(guild);
         switch (event.getSubcommandName()) {
-            case "add" -> add(event, food);
-            case "remove" -> remove(event, food);
-            case "list" -> list(event, food);
+            case "add" -> add(event, guild);
+            case "remove" -> remove(event, guild);
+            case "list" -> list(event, guild);
             case "poll" -> poll(event, guild);
             default -> event.reply("Unknown subcommand.").setEphemeral(true).queue();
         }
     }
 
-    private void add(SlashCommandInteractionEvent event, FoodHandler food) {
+    private void add(SlashCommandInteractionEvent event, Guild guild) {
         String name = event.getOption("name").getAsString();
         String emoji = event.getOption("emoji").getAsString();
-        if (food.checkFood(emoji) == -1) {
-            food.addFood(name, emoji);
+        List<FoodItem> list = repos.food().findAll(guild.getId());
+        if (checkFood(list, emoji) == -1) {
+            repos.food().add(guild.getId(), name, emoji);
             event.reply(String.format("Successfully added %s to the lunch-list with %s as emoji", name, emoji)).queue();
         } else {
             event.reply(String.format("The emoji %s is already part of the lunch-list", emoji)).setEphemeral(true).queue();
         }
     }
 
-    private void remove(SlashCommandInteractionEvent event, FoodHandler food) {
+    private void remove(SlashCommandInteractionEvent event, Guild guild) {
         Integer index = event.getOption("index", null, OptionMapping::getAsInt);
         String emoji = event.getOption("emoji", null, OptionMapping::getAsString);
-        List<Map<String, String>> list = food.getFood();
+        List<FoodItem> list = repos.food().findAll(guild.getId());
         int target;
         if (index != null) {
             if (index < 1 || index > list.size()) {
@@ -78,7 +83,7 @@ public class FoodCommands implements SlashCommand {
             }
             target = index - 1;
         } else if (emoji != null) {
-            target = food.checkFood(emoji);
+            target = checkFood(list, emoji);
             if (target == -1) {
                 event.reply(emoji + " is not an emoji on the lunch-list").setEphemeral(true).queue();
                 return;
@@ -87,14 +92,13 @@ public class FoodCommands implements SlashCommand {
             event.reply("Provide an emoji or an index.").setEphemeral(true).queue();
             return;
         }
-        String name = list.get(target).get("Name");
-        String foundEmoji = list.get(target).get("Emoji");
-        food.removeFood(target);
-        event.reply(String.format("Successfully removed %s with %s as emoji", name, foundEmoji)).queue();
+        FoodItem item = list.get(target);
+        repos.food().remove(item.id());
+        event.reply(String.format("Successfully removed %s with %s as emoji", item.name(), item.emoji())).queue();
     }
 
-    private void list(SlashCommandInteractionEvent event, FoodHandler food) {
-        List<Map<String, String>> list = food.getFood();
+    private void list(SlashCommandInteractionEvent event, Guild guild) {
+        List<FoodItem> list = repos.food().findAll(guild.getId());
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.ORANGE);
         if (list.isEmpty()) {
@@ -102,7 +106,7 @@ public class FoodCommands implements SlashCommand {
         } else {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < list.size(); i++) {
-                sb.append(i == 0 ? "" : "\n").append(list.get(i).get("Name")).append(" ").append(list.get(i).get("Emoji"));
+                sb.append(i == 0 ? "" : "\n").append(list.get(i).name()).append(" ").append(list.get(i).emoji());
             }
             eb.addField("Food", sb.toString(), true);
         }
@@ -110,7 +114,20 @@ public class FoodCommands implements SlashCommand {
     }
 
     private void poll(SlashCommandInteractionEvent event, Guild guild) {
-        LunchMessager.makeMessage(null, guild);
+        LunchMessager.makeMessage(null, guild, repos);
         event.reply("Lunch poll posted.").setEphemeral(true).queue();
+    }
+
+    /**
+     * Preserves the legacy {@code FoodHandler.checkFood} contract verbatim, including its
+     * off-by-one: returns {@code matchIndex - 1} on a match and {@code -1} when not found
+     * (so a match at index 0 also returns -1). Bug fix deferred to roadmap item 4.
+     */
+    private static int checkFood(List<FoodItem> list, String emoji) {
+        int i = 0;
+        while (i < list.size() && !list.get(i).emoji().equalsIgnoreCase(emoji)) {
+            i++;
+        }
+        return i < list.size() ? i - 1 : -1;
     }
 }

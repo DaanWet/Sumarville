@@ -2,12 +2,12 @@ package Commands.NPCMessages;
 
 import Commands.Framework.Interactions;
 import Commands.Framework.SlashCommand;
-import DataHandlers.NPCMessageHandler;
+import Database.Repositories;
+import Domain.NpcMessage;
+import Domain.NpcMessageType;
 import Players.DM;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -18,9 +18,14 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 
 public class NpcCommands implements SlashCommand {
+
+    private final Repositories repos;
+
+    public NpcCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -62,19 +67,19 @@ public class NpcCommands implements SlashCommand {
         String type = event.getOption("type", "Basic", OptionMapping::getAsString);
         boolean isPrivate = event.getOption("private", false, OptionMapping::getAsBoolean);
 
-        if (("Specific".equals(type) || isPrivate) && !new DM(guild).isHeldBy(event.getMember())) {
+        if (("Specific".equals(type) || isPrivate) && !new DM(guild, repos.config()).isHeldBy(event.getMember())) {
             event.reply("Only the DM can add specific/private NPC messages.").setEphemeral(true).queue();
             return;
         }
-        new NPCMessageHandler(guild).addMessage(message, type, npc);
+        repos.npcMessages().add(guild.getId(), NpcMessageType.fromLegacy(type), npc, message);
         event.reply(String.format("Added '%s' to the %s NPC-message list", message, type)).setEphemeral(isPrivate).queue();
     }
 
     private void remove(SlashCommandInteractionEvent event, Guild guild) {
         int index = event.getOption("index").getAsInt();
-        NPCMessageHandler handler = new NPCMessageHandler(guild);
-        if (index >= 0 && index < handler.getBasicMessages().size()) {
-            handler.removeMessage(index);
+        List<NpcMessage> basic = repos.npcMessages().findByType(guild.getId(), NpcMessageType.BASIC);
+        if (index >= 0 && index < basic.size()) {
+            repos.npcMessages().remove(basic.get(index).id());
             event.reply("Removed message #" + index).queue();
         } else {
             event.reply("There is no message #" + index).setEphemeral(true).queue();
@@ -82,13 +87,13 @@ public class NpcCommands implements SlashCommand {
     }
 
     private void list(SlashCommandInteractionEvent event, Guild guild) {
-        List<Map<String, String>> messages = new NPCMessageHandler(guild).getBasicMessages();
+        List<NpcMessage> messages = repos.npcMessages().findByType(guild.getId(), NpcMessageType.BASIC);
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.ORANGE);
         eb.setTitle("Basic NPC messages");
-        for (Map<String, String> m : messages) {
-            String name = m.get("npc");
-            eb.addField(name != null && !name.isEmpty() ? name : "Sumarville", m.get("message"), false);
+        for (NpcMessage m : messages) {
+            String name = m.npc();
+            eb.addField(name != null && !name.isEmpty() ? name : "Sumarville", m.message(), false);
         }
         event.replyEmbeds(eb.build()).queue();
     }

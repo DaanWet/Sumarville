@@ -1,6 +1,7 @@
 package Commands.Users;
 
 import Commands.Framework.SlashCommand;
+import Database.Repositories;
 import Players.DM;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -15,6 +16,12 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import java.util.List;
 
 public class DmCommands implements SlashCommand {
+
+    private final Repositories repos;
+
+    public DmCommands(Repositories repos) {
+        this.repos = repos;
+    }
 
     @Override
     public String getId() {
@@ -38,7 +45,7 @@ public class DmCommands implements SlashCommand {
             event.reply("This command only works in a server.").setEphemeral(true).queue();
             return;
         }
-        Role dmRole = new DM(guild).getRole();
+        Role dmRole = new DM(guild, repos.config()).getRole();
         List<Member> currentDms = guild.getMembersWithRoles(dmRole);
 
         if (event.getSubcommandName().equals("claim")) {

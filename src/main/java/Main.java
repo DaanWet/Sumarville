@@ -9,6 +9,9 @@ import Commands.Framework.CommandRouter;
 import Commands.NPCMessages.NpcCommands;
 import Commands.Users.CharacterCommands;
 import Commands.Users.DmCommands;
+import Database.Database;
+import Database.LegacyDataImporter;
+import Database.Repositories;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -21,14 +24,20 @@ import java.util.EnumSet;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        String dbPath = System.getenv().getOrDefault("DB_PATH", "./data/sumarville.db");
+        String dbKey = System.getenv("DB_ENCRYPTION_KEY");
+        Database db = new Database(dbPath, dbKey);
+        LegacyDataImporter.run(db, "./Data.json");
+        Repositories repos = new Repositories(db);
+
         CommandRegistry registry = new CommandRegistry();
         registry.register(new DiceCommands());
-        registry.register(new SessionCommands());
-        registry.register(new FoodCommands());
-        registry.register(new NpcCommands());
-        registry.register(new CharacterCommands());
-        registry.register(new DmCommands());
-        registry.register(new ConfigCommands());
+        registry.register(new SessionCommands(repos));
+        registry.register(new FoodCommands(repos));
+        registry.register(new NpcCommands(repos));
+        registry.register(new CharacterCommands(repos));
+        registry.register(new DmCommands(repos));
+        registry.register(new ConfigCommands(repos));
         registry.register(new HelpCommand(registry));
 
         String token = System.getenv("BOT_TOKEN");
@@ -49,6 +58,6 @@ public class Main {
             jda.updateCommands().addCommands(registry.allCommandData()).queue();
         }
 
-        jda.getGuilds().forEach(SessionReminder::onRestart);
+        jda.getGuilds().forEach(g -> SessionReminder.onRestart(g, repos));
     }
 }
