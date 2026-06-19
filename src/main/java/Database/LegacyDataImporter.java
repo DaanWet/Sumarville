@@ -7,6 +7,7 @@ import org.json.simple.parser.JSONParser;
 
 import java.io.File;
 import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Logger;
@@ -38,7 +39,7 @@ public final class LegacyDataImporter {
         }
 
         final JSONObject root;
-        try (FileReader reader = new FileReader(file)) {
+        try (FileReader reader = new FileReader(file, StandardCharsets.UTF_8)) {
             root = (JSONObject) new JSONParser().parse(reader);
         } catch (Exception e) {
             throw new RuntimeException("Failed to read legacy " + dataJsonPath, e);
