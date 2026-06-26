@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -136,9 +137,22 @@ public class CharacterCommands implements SlashCommand {
         String name = event.getValue("name").getAsString();
         String picture = event.getValue("picture") != null ? event.getValue("picture").getAsString() : "";
 
+        event.deferReply().queue(); // acknowledge now; role creation below may block on a REST call
+
+        Role playerRole = null;
+        if (!asNpc) {
+            try {
+                playerRole = new Player(guild, repos.config()).getRole();
+            } catch (RuntimeException e) {
+                event.getHook().sendMessage("Couldn't set up the player role — does the bot have the Manage Roles permission?")
+                        .setEphemeral(true).queue();
+                return; // nothing persisted yet, so no half-created character
+            }
+        }
+
         repos.characters().add(guild.getId(), asNpc ? null : member.getId(), name, picture);
         if (!asNpc) {
-            guild.addRoleToMember(member, new Player(guild, repos.config()).getRole()).queue();
+            guild.addRoleToMember(member, playerRole).queue();
             guild.modifyNickname(member, name).queue();
         }
 
@@ -147,7 +161,7 @@ public class CharacterCommands implements SlashCommand {
         eb.setTitle("Newly Created Character:");
         eb.addField("Name", name, true);
         eb.addField("Picture", picture.isEmpty() ? "—" : picture, true);
-        event.replyEmbeds(eb.build()).queue();
+        event.getHook().sendMessageEmbeds(eb.build()).queue();
     }
 
     private void edit(SlashCommandInteractionEvent event, Guild guild) {
