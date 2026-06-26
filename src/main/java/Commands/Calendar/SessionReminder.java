@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -29,6 +30,7 @@ public class SessionReminder {
     }
 
     public static void makeMessage(LocalDateTime date, Guild g, Repositories repos) {
+        Objects.requireNonNull(date, "session date must not be null");
         LocalDateTime messageDate = date.minusHours(6);
         long diff = ChronoUnit.MILLIS.between(LocalDateTime.now(), messageDate);
 

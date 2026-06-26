@@ -48,7 +48,12 @@ public class DmCommands implements SlashCommand {
         Role dmRole = new DM(guild, repos.config()).getRole();
         List<Member> currentDms = guild.getMembersWithRoles(dmRole);
 
-        if (event.getSubcommandName().equals("claim")) {
+        String sub = event.getSubcommandName();
+        if (sub == null) {
+            event.reply("Unknown subcommand.").setEphemeral(true).queue();
+            return;
+        }
+        if (sub.equals("claim")) {
             if (currentDms.isEmpty()) {
                 guild.addRoleToMember(member, dmRole).queue();
                 event.reply("You are now the Dungeon Master.").queue();
