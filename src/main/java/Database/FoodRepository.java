@@ -12,8 +12,11 @@ public class FoodRepository {
         this.db = db;
     }
 
-    public void add(String guildId, String name, String emoji) {
-        db.insert("INSERT INTO food(guild_id, name, emoji) VALUES(?,?,?)", guildId, name, emoji);
+    /** Adds a food item; returns false if the guild already has an item with this emoji. */
+    public boolean add(String guildId, String name, String emoji) {
+        return db.update(
+                "INSERT INTO food(guild_id, name, emoji) VALUES(?,?,?) ON CONFLICT(guild_id, emoji) DO NOTHING",
+                guildId, name, emoji) > 0;
     }
 
     public void remove(long id) {

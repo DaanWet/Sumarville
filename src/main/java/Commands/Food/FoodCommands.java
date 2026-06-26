@@ -63,9 +63,7 @@ public class FoodCommands implements SlashCommand {
     private void add(SlashCommandInteractionEvent event, Guild guild) {
         String name = event.getOption("name").getAsString();
         String emoji = event.getOption("emoji").getAsString();
-        List<FoodItem> list = repos.food().findAll(guild.getId());
-        if (findByEmoji(list, emoji).isEmpty()) {
-            repos.food().add(guild.getId(), name, emoji);
+        if (repos.food().add(guild.getId(), name, emoji)) {
             event.reply(String.format("Successfully added %s to the lunch-list with %s as emoji", name, emoji)).queue();
         } else {
             event.reply(String.format("The emoji %s is already part of the lunch-list", emoji)).setEphemeral(true).queue();

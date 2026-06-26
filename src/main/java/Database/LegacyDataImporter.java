@@ -87,7 +87,7 @@ public final class LegacyDataImporter {
         JSONArray food = (JSONArray) g.getOrDefault("Food", new JSONArray());
         for (Object f : food) {
             JSONObject fo = (JSONObject) f;
-            db.insert("INSERT INTO food(guild_id, name, emoji) VALUES(?,?,?)",
+            db.insert("INSERT INTO food(guild_id, name, emoji) VALUES(?,?,?) ON CONFLICT(guild_id, emoji) DO NOTHING",
                     guildId, (String) fo.get("Name"), (String) fo.get("Emoji"));
         }
     }

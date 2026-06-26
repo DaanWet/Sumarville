@@ -12,6 +12,19 @@ import static org.junit.jupiter.api.Assertions.*;
 class FoodRepositoryTest {
 
     @Test
+    void addRejectsDuplicateEmojiPerGuildButAllowsAcrossGuilds(@TempDir Path dir) {
+        try (Database db = new Database(dir.resolve("f.db").toString(), null)) {
+            FoodRepository repo = new FoodRepository(db);
+            assertTrue(repo.add("g1", "Pizza", "🍕"));      // first insert succeeds
+            assertFalse(repo.add("g1", "Calzone", "🍕"));    // same emoji, same guild -> rejected, no second row
+            assertTrue(repo.add("g2", "Pizza", "🍕"));       // same emoji, different guild -> allowed
+            List<FoodItem> g1 = repo.findAll("g1");
+            assertEquals(1, g1.size());
+            assertEquals("Pizza", g1.get(0).name());
+        }
+    }
+
+    @Test
     void addFindAllOrderedThenRemoveById(@TempDir Path dir) {
         try (Database db = new Database(dir.resolve("f.db").toString(), null)) {
             FoodRepository repo = new FoodRepository(db);

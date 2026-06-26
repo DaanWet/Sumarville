@@ -72,7 +72,10 @@ public class Database implements AutoCloseable {
                 "CREATE INDEX IF NOT EXISTS idx_sessions_guild ON sessions(guild_id)",
                 "CREATE INDEX IF NOT EXISTS idx_food_guild ON food(guild_id)",
                 "CREATE INDEX IF NOT EXISTS idx_characters_guild ON characters(guild_id)",
-                "CREATE INDEX IF NOT EXISTS idx_npc_messages_guild ON npc_messages(guild_id)"
+                "CREATE INDEX IF NOT EXISTS idx_npc_messages_guild ON npc_messages(guild_id)",
+                // One-time de-dup of any pre-existing (guild_id, emoji) duplicates, then enforce uniqueness.
+                "DELETE FROM food WHERE id NOT IN (SELECT MIN(id) FROM food GROUP BY guild_id, emoji)",
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_food_guild_emoji ON food(guild_id, emoji)"
         };
         try (Statement st = conn.createStatement()) {
             for (String sql : ddl) {
