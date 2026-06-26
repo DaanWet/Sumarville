@@ -12,10 +12,6 @@ public class DM extends Person {
         resolveOrCreateRole(g, config, "DM", "DM", Color.MAGENTA);
     }
 
-    public boolean isHeldBy(Member member) {
-        return member != null && role != null && member.getRoles().contains(role);
-    }
-
     /** Read-only DM check: true iff a DM role is configured and {@code member} has it. Never creates the role. */
     public static boolean isHeldBy(Member member, Guild g, ConfigRepository config) {
         if (member == null) {

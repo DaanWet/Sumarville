@@ -45,4 +45,12 @@ class FoodCommandsTest {
     void emptyWhenListEmpty() {
         assertTrue(FoodCommands.findByEmoji(List.of(), "🍕").isEmpty());
     }
+
+    @Test
+    void matchIsCaseInsensitive() { // findByEmoji uses equalsIgnoreCase
+        Optional<FoodItem> m = FoodCommands.findByEmoji(
+                List.of(new FoodItem(1L, "Taco", ":TACO:")), ":taco:");
+        assertTrue(m.isPresent());
+        assertEquals(1L, m.get().id());
+    }
 }

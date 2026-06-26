@@ -55,9 +55,14 @@ public class ConfigCommands implements SlashCommand {
     public void execute(SlashCommandInteractionEvent event) {
         Guild guild = Interactions.requireGuild(event);
         if (guild == null) return;
+        String sub = event.getSubcommandName();
+        if (sub == null) {
+            event.reply("Unknown subcommand.").setEphemeral(true).queue();
+            return;
+        }
         String setting = event.getOption("setting").getAsString();
 
-        if (event.getSubcommandName().equals("role")) {
+        if (sub.equals("role")) {
             if (!ConfigKeys.isRoleKey(setting)) {
                 event.reply("Unknown role setting.").setEphemeral(true).queue();
                 return;
