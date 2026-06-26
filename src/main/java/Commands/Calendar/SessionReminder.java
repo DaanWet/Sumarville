@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ScheduledFuture;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class SessionReminder {
 
     private static final DateTimeFormatter sdf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final Map<String, ScheduledFuture<?>> map = new HashMap<>();
+    private static final Map<String, ScheduledFuture<?>> map = new ConcurrentHashMap<>();
     private static final Random random = new Random();
 
     private static String key(String guildId, LocalDateTime date) {
@@ -61,7 +61,10 @@ public class SessionReminder {
                     LunchMessager.makeMessage(date, g, repos);
                     repos.npcMessages().clearSpecific(g.getId());
                 });
-        map.put(key(g.getId(), date), task);
+        ScheduledFuture<?> previous = map.put(key(g.getId(), date), task);
+        if (previous != null) {
+            previous.cancel(false);
+        }
     }
 
     public static void cancelSession(String guildId, LocalDateTime date) {

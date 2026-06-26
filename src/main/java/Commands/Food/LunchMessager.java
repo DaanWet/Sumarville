@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -20,7 +20,7 @@ public class LunchMessager {
 
     private static final DateTimeFormatter sdf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     // Keyed per (guild, date) so two guilds with a session on the same day no longer collide.
-    private static final Map<String, ScheduledFuture<?>> map = new HashMap<>();
+    private static final Map<String, ScheduledFuture<?>> map = new ConcurrentHashMap<>();
 
     private static String key(String guildId, LocalDateTime date) {
         return guildId + "|" + (date == null ? "now" : date.format(sdf));
@@ -39,7 +39,10 @@ public class LunchMessager {
         ScheduledFuture<?> task = ch.sendMessage(buildText(date, foodList)).queueAfter(
                 diff > 0 ? diff : 0, TimeUnit.MILLISECONDS,
                 message -> emojis.forEach(s -> message.addReaction(Emoji.fromFormatted(s)).queue()));
-        map.put(key(g.getId(), date), task);
+        ScheduledFuture<?> previous = map.put(key(g.getId(), date), task);
+        if (previous != null) {
+            previous.cancel(false);
+        }
     }
 
     private static String buildText(LocalDateTime date, List<FoodItem> foodList) {
