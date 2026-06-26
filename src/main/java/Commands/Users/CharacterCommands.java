@@ -79,7 +79,7 @@ public class CharacterCommands implements SlashCommand {
         Member member = event.getMember();
 
         if (!asNpc) {
-            if (member != null && new DM(guild, repos.config()).isHeldBy(member)) {
+            if (DM.isHeldBy(member, guild, repos.config())) {
                 event.reply("Character creation cancelled — you are the DM.").setEphemeral(true).queue();
                 return;
             }

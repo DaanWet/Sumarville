@@ -67,7 +67,7 @@ public class NpcCommands implements SlashCommand {
         String type = event.getOption("type", "Basic", OptionMapping::getAsString);
         boolean isPrivate = event.getOption("private", false, OptionMapping::getAsBoolean);
 
-        if (("Specific".equals(type) || isPrivate) && !new DM(guild, repos.config()).isHeldBy(event.getMember())) {
+        if (("Specific".equals(type) || isPrivate) && !DM.isHeldBy(event.getMember(), guild, repos.config())) {
             event.reply("Only the DM can add specific/private NPC messages.").setEphemeral(true).queue();
             return;
         }
