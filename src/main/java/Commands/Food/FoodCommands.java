@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Optional;
 
 public class FoodCommands implements SlashCommand {
 
@@ -63,7 +64,7 @@ public class FoodCommands implements SlashCommand {
         String name = event.getOption("name").getAsString();
         String emoji = event.getOption("emoji").getAsString();
         List<FoodItem> list = repos.food().findAll(guild.getId());
-        if (checkFood(list, emoji) == -1) {
+        if (findByEmoji(list, emoji).isEmpty()) {
             repos.food().add(guild.getId(), name, emoji);
             event.reply(String.format("Successfully added %s to the lunch-list with %s as emoji", name, emoji)).queue();
         } else {
@@ -75,24 +76,24 @@ public class FoodCommands implements SlashCommand {
         Integer index = event.getOption("index", null, OptionMapping::getAsInt);
         String emoji = event.getOption("emoji", null, OptionMapping::getAsString);
         List<FoodItem> list = repos.food().findAll(guild.getId());
-        int target;
+        FoodItem item;
         if (index != null) {
             if (index < 1 || index > list.size()) {
                 event.reply(String.format("The lunch-list only contains %d items", list.size())).setEphemeral(true).queue();
                 return;
             }
-            target = index - 1;
+            item = list.get(index - 1);
         } else if (emoji != null) {
-            target = checkFood(list, emoji);
-            if (target == -1) {
+            Optional<FoodItem> match = findByEmoji(list, emoji);
+            if (match.isEmpty()) {
                 event.reply(emoji + " is not an emoji on the lunch-list").setEphemeral(true).queue();
                 return;
             }
+            item = match.get();
         } else {
             event.reply("Provide an emoji or an index.").setEphemeral(true).queue();
             return;
         }
-        FoodItem item = list.get(target);
         repos.food().remove(item.id());
         event.reply(String.format("Successfully removed %s with %s as emoji", item.name(), item.emoji())).queue();
     }
@@ -118,16 +119,8 @@ public class FoodCommands implements SlashCommand {
         event.reply("Lunch poll posted.").setEphemeral(true).queue();
     }
 
-    /**
-     * Preserves the legacy {@code FoodHandler.checkFood} contract verbatim, including its
-     * off-by-one: returns {@code matchIndex - 1} on a match and {@code -1} when not found
-     * (so a match at index 0 also returns -1). Bug fix deferred to roadmap item 4.
-     */
-    private static int checkFood(List<FoodItem> list, String emoji) {
-        int i = 0;
-        while (i < list.size() && !list.get(i).emoji().equalsIgnoreCase(emoji)) {
-            i++;
-        }
-        return i < list.size() ? i - 1 : -1;
+    /** Finds the food item carrying this emoji, if any. Replaces the legacy off-by-one {@code checkFood}. */
+    static Optional<FoodItem> findByEmoji(List<FoodItem> list, String emoji) {
+        return list.stream().filter(f -> f.emoji().equalsIgnoreCase(emoji)).findFirst();
     }
 }
