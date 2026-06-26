@@ -72,16 +72,26 @@ public class SessionReminder {
         }
     }
 
+    enum RestartAction { FULL, LUNCH_ONLY, NONE }
+
+    /** Mirrors {@link #makeMessage}'s 6h reminder window so a restart reschedules consistently. */
+    static RestartAction decide(LocalDateTime now, LocalDateTime session) {
+        if (now.isBefore(session.minusHours(6))) {
+            return RestartAction.FULL;
+        }
+        if (now.isBefore(session)) {
+            return RestartAction.LUNCH_ONLY;
+        }
+        return RestartAction.NONE;
+    }
+
     public static void onRestart(Guild g, Repositories repos) {
         List<LocalDateTime> sessions = repos.sessions().find(g.getId(), false);
         sessions.forEach(session -> {
-            LocalDateTime messageDate = session.minusHours(4);
-            long diff = ChronoUnit.MILLIS.between(LocalDateTime.now(), messageDate);
-            long difffood = ChronoUnit.MILLIS.between(LocalDateTime.now(), session);
-            if (diff > 0) {
-                makeMessage(session, g, repos);
-            } else if (difffood > 0) {
-                LunchMessager.makeMessage(session, g, repos);
+            switch (decide(LocalDateTime.now(), session)) {
+                case FULL -> makeMessage(session, g, repos);
+                case LUNCH_ONLY -> LunchMessager.makeMessage(session, g, repos);
+                case NONE -> { }
             }
         });
     }
