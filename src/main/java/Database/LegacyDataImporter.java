@@ -79,7 +79,7 @@ public final class LegacyDataImporter {
                 String iso = LocalDate.parse((String) d, LEGACY_DATE).format(ISO);
                 db.insert("INSERT INTO sessions(guild_id, session_date) VALUES(?,?)", guildId, iso);
             } catch (Exception e) {
-                LOG.warn("Skipping unparseable session date '" + d + "' for guild " + guildId);
+                LOG.warn("Skipping unparseable session date '{}' for guild {}", d, guildId);
             }
         }
     }

@@ -17,6 +17,7 @@ public final class Observability {
         Sentry.init(options -> {
             options.setDsn((dsn == null || dsn.isBlank()) ? "" : dsn);
             options.setEnvironment(environment);
+            options.setEnableExternalConfiguration(false);
         });
     }
 }

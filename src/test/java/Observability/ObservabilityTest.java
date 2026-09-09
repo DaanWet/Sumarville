@@ -21,6 +21,12 @@ class ObservabilityTest {
     }
 
     @Test
+    void blankDsnLeavesSentryDisabled_whitespaceOnly() {
+        Observability.initSentry("   ", "test");
+        assertFalse(Sentry.isEnabled());
+    }
+
+    @Test
     void validDsnEnablesSentry() {
         Observability.initSentry("https://public@example.com/1", "test");
         assertTrue(Sentry.isEnabled());

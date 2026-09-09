@@ -51,6 +51,8 @@ public class CommandRouter extends ListenerAdapter {
             Guild guild = event.getGuild();
             if (guild != null) {
                 scope.setTag("guild", guild.getId());
+            } else {
+                scope.removeTag("guild");
             }
         });
         try {

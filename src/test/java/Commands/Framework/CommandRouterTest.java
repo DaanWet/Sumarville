@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 class CommandRouterTest {
@@ -70,5 +71,40 @@ class CommandRouterTest {
         Sentry.configureScope(scope -> tags.set(scope.getTags()));
         assertEquals("42", tags.get().get("guild"));
         assertEquals("slash /ping", tags.get().get("command"));
+    }
+
+    @Test
+    void dispatchClearsStaleGuildTagWhenSubsequentEventHasNoGuild() {
+        Observability.initSentry("https://public@example.com/1", "test");
+
+        CommandRegistry registry = new CommandRegistry();
+        SlashCommand ok = mock(SlashCommand.class);
+        when(ok.getId()).thenReturn("ping");
+        when(ok.getCommandData()).thenReturn(List.of(Commands.slash("ping", "pings")));
+        registry.register(ok);
+
+        CommandRouter router = new CommandRouter(registry);
+
+        SlashCommandInteractionEvent guildEvent = mock(SlashCommandInteractionEvent.class);
+        when(guildEvent.getName()).thenReturn("ping");
+        Guild guild = mock(Guild.class);
+        when(guild.getId()).thenReturn("42");
+        when(guildEvent.getGuild()).thenReturn(guild);
+
+        router.onSlashCommandInteraction(guildEvent);
+
+        AtomicReference<Map<String, String>> afterGuild = new AtomicReference<>();
+        Sentry.configureScope(scope -> afterGuild.set(scope.getTags()));
+        assertEquals("42", afterGuild.get().get("guild"));
+
+        SlashCommandInteractionEvent dmEvent = mock(SlashCommandInteractionEvent.class);
+        when(dmEvent.getName()).thenReturn("ping");
+        when(dmEvent.getGuild()).thenReturn(null);
+
+        router.onSlashCommandInteraction(dmEvent);
+
+        AtomicReference<Map<String, String>> afterDm = new AtomicReference<>();
+        Sentry.configureScope(scope -> afterDm.set(scope.getTags()));
+        assertNull(afterDm.get().get("guild"));
     }
 }

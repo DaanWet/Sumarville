@@ -1,7 +1,9 @@
 *.iml
 *.xml
+!src/main/resources/logback.xml
 target/*
 .superpowers/
+docs/superpowers/
 
 # Runtime data (encrypted SQLite DB) and migrated legacy store — never commit user data
 data/
