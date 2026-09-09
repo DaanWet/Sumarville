@@ -12,6 +12,7 @@ import Commands.Users.DmCommands;
 import Database.Database;
 import Database.LegacyDataImporter;
 import Database.Repositories;
+import Observability.Observability;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -24,6 +25,10 @@ import java.util.EnumSet;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        Observability.initSentry(
+                System.getenv("SENTRY_DSN"),
+                System.getenv().getOrDefault("SENTRY_ENVIRONMENT", "production"));
+
         String dbPath = System.getenv().getOrDefault("DB_PATH", "./data/sumarville.db");
         String dbKey = System.getenv("DB_ENCRYPTION_KEY");
         Database db = new Database(dbPath, dbKey);
