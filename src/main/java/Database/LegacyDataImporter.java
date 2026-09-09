@@ -10,7 +10,8 @@ import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * One-time importer from the legacy {@code Data.json} into the database. Idempotent:
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
  */
 public final class LegacyDataImporter {
 
-    private static final Logger LOG = Logger.getLogger(LegacyDataImporter.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(LegacyDataImporter.class);
     private static final DateTimeFormatter LEGACY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -59,7 +60,7 @@ public final class LegacyDataImporter {
         });
 
         if (!file.renameTo(new File(dataJsonPath + ".imported"))) {
-            LOG.warning("Imported Data.json but could not rename it to Data.json.imported");
+            LOG.warn("Imported Data.json but could not rename it to Data.json.imported");
         }
     }
 
@@ -78,7 +79,7 @@ public final class LegacyDataImporter {
                 String iso = LocalDate.parse((String) d, LEGACY_DATE).format(ISO);
                 db.insert("INSERT INTO sessions(guild_id, session_date) VALUES(?,?)", guildId, iso);
             } catch (Exception e) {
-                LOG.warning("Skipping unparseable session date '" + d + "' for guild " + guildId);
+                LOG.warn("Skipping unparseable session date '" + d + "' for guild " + guildId);
             }
         }
     }

@@ -92,4 +92,14 @@ class LegacyDataImporterTest {
             assertTrue(new FoodRepository(db).findAll("333").isEmpty());
         }
     }
+
+    @Test
+    void unparseableSessionDateIsSkippedWithoutThrowing(@TempDir Path dir) throws Exception {
+        Path json = dir.resolve("Data.json");
+        Files.writeString(json, "{ \"444\": { \"Dates\": [ \"not-a-date\" ] } }");
+        try (Database db = new Database(dir.resolve("bad.db").toString(), null)) {
+            LegacyDataImporter.run(db, json.toString()); // must not throw
+            assertEquals(0, new SessionRepository(db).find("444", true).size());
+        }
+    }
 }
