@@ -1,6 +1,7 @@
 *.iml
 *.xml
 target/*
+.superpowers/
 
 # Runtime data (encrypted SQLite DB) and migrated legacy store — never commit user data
 data/
