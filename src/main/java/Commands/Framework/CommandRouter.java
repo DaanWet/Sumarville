@@ -1,5 +1,7 @@
 package Commands.Framework;
 
+import io.sentry.Sentry;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -44,6 +46,13 @@ public class CommandRouter extends ListenerAdapter {
 
     /** Runs a handler and guarantees the interaction is answered even if the handler throws. */
     private void dispatch(IReplyCallback event, Runnable handler, String label) {
+        Sentry.configureScope(scope -> {
+            scope.setTag("command", label);
+            Guild guild = event.getGuild();
+            if (guild != null) {
+                scope.setTag("guild", guild.getId());
+            }
+        });
         try {
             handler.run();
         } catch (RuntimeException e) {
