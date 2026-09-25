@@ -31,13 +31,13 @@ public class Database implements AutoCloseable {
     /**
      * Production entry point. Unlike the constructor it never falls back to an unencrypted database
      * silently: without a key it refuses to start unless {@code allowUnencrypted} is set, and even then
-     * it logs a warning (which also reaches Sentry).
+     * it logs a warning (which also reaches Sentry when that is configured).
      */
     public static Database open(String path, String encryptionKey, boolean allowUnencrypted) {
-        if (encryptionKey == null || encryptionKey.isBlank()) {
+        if (!hasKey(encryptionKey)) {
             Path file = Path.of(path).toAbsolutePath().normalize();
             if (!allowUnencrypted) {
-                throw new IllegalStateException("DB_ENCRYPTION_KEY is not set: refusing to open an unencrypted database at "
+                throw new IllegalStateException("DB_ENCRYPTION_KEY is not set or blank: refusing to open an unencrypted database at "
                         + file + ". Set DB_ENCRYPTION_KEY, or DB_ALLOW_UNENCRYPTED=true for local development only.");
             }
             LOG.warn("Opening an UNENCRYPTED database at {} (DB_ALLOW_UNENCRYPTED=true); never do this in production", file);
@@ -46,16 +46,19 @@ public class Database implements AutoCloseable {
     }
 
     /**
+     * Package-private so production code has to go through {@link #open}; tests use it directly
+     * for fast unencrypted databases.
+     *
      * @param path          filesystem path to the database file
      * @param encryptionKey SQLCipher passphrase; null/blank opens an unencrypted DB
      */
-    public Database(String path, String encryptionKey) {
+    Database(String path, String encryptionKey) {
         try {
             Path parent = new File(path).getAbsoluteFile().getParentFile().toPath();
             Files.createDirectories(parent);
 
             String url = "jdbc:sqlite:" + path;
-            if (encryptionKey != null && !encryptionKey.isBlank()) {
+            if (hasKey(encryptionKey)) {
                 this.conn = DriverManager.getConnection(
                         url,
                         SQLiteMCSqlCipherConfig.getDefault()
@@ -172,6 +175,11 @@ public class Database implements AutoCloseable {
                 }
             }
         }
+    }
+
+    /** The one definition of "a key was given", shared by {@link #open} and the constructor so they cannot drift apart. */
+    private static boolean hasKey(String encryptionKey) {
+        return encryptionKey != null && !encryptionKey.isBlank();
     }
 
     private static void bind(PreparedStatement ps, Object... params) throws SQLException {

@@ -19,15 +19,16 @@ class DatabaseTest {
     private static final String PLAIN_SQLITE_HEADER = "SQLite format 3\0";
 
     @Test
-    void openWithoutKeyRefusesAndCreatesNoFile(@TempDir Path dir) {
+    void openWithoutKeyRefusesAndCreatesNothing(@TempDir Path dir) {
         Path file = dir.resolve("data").resolve("prod.db");
 
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> Database.open(file.toString(), null, false));
 
         assertTrue(e.getMessage().contains("DB_ENCRYPTION_KEY"));
-        assertThrows(IllegalStateException.class, () -> Database.open(file.toString(), "", false));
-        assertFalse(Files.exists(file));
+        assertTrue(e.getMessage().contains(file.toString()));
+        assertThrows(IllegalStateException.class, () -> Database.open(file.toString(), "   ", false));
+        assertFalse(Files.exists(file.getParent()), "not even the data directory may be created");
     }
 
     @Test
