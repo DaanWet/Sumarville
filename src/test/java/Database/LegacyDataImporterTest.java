@@ -126,10 +126,41 @@ class LegacyDataImporterTest {
         try (Database db = new Database(dir.resolve("nf.db").toString(), null)) {
             // First run: no file present, fresh install allowed -> sets the imported flag, imports nothing
             LegacyDataImporter.run(db, json.toString(), true);
-            // A Data.json now appears, but the flag must cause it to be skipped
+            // A Data.json now appears, but the flag must cause it to be skipped, even with the opt-in removed
             Files.writeString(json, "{ \"333\": { \"Food\": [ { \"Name\": \"X\", \"Emoji\": \"x\" } ] } }");
-            LegacyDataImporter.run(db, json.toString(), true);
+            LegacyDataImporter.run(db, json.toString(), false);
             assertTrue(new FoodRepository(db).findAll("333").isEmpty());
+        }
+    }
+
+    @Test
+    void freshInstallLogsAWarning(@TempDir Path dir) {
+        try (Database db = new Database(dir.resolve("fresh.db").toString(), null);
+             LogCapture logs = new LogCapture(LegacyDataImporter.class)) {
+            LegacyDataImporter.run(db, dir.resolve("Data.json").toString(), true);
+
+            assertEquals(1, logs.messagesAt(Level.WARN).size());
+        }
+    }
+
+    @Test
+    void alreadyImportedWarnsOnlyWhenADataJsonIsStillPresent(@TempDir Path dir) throws Exception {
+        Path json = dir.resolve("Data.json");
+        Files.writeString(json, SAMPLE);
+        try (Database db = new Database(dir.resolve("done.db").toString(), null);
+             LogCapture logs = new LogCapture(LegacyDataImporter.class)) {
+            LegacyDataImporter.run(db, json.toString(), false); // imports, then renames the file
+
+            LegacyDataImporter.run(db, json.toString(), false); // normal restart: nothing to warn about
+            assertTrue(logs.messagesAt(Level.WARN).isEmpty());
+
+            Files.writeString(json, SAMPLE); // a Data.json shows up again next to an imported database
+            LegacyDataImporter.run(db, json.toString(), false);
+
+            List<String> warnings = logs.messagesAt(Level.WARN);
+            assertEquals(1, warnings.size());
+            assertTrue(warnings.get(0).contains(json.toString()));
+            assertEquals(1, new SessionRepository(db).find("111", true).size()); // ignored, not imported twice
         }
     }
 

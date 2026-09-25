@@ -31,23 +31,31 @@ public final class LegacyDataImporter {
      * Imports {@code dataJsonPath} unless that already happened. A missing file only counts as a fresh
      * install when {@code allowFreshInstall} is set; otherwise startup is refused and the import stays
      * pending, so a misplaced Data.json can never silently turn into an empty production database.
+     * Starting fresh and ignoring a Data.json that shows up after the import are both logged as warnings.
      */
     public static void run(Database db, String dataJsonPath, boolean allowFreshInstall) {
+        File file = new File(dataJsonPath);
+        Path source = file.toPath().toAbsolutePath().normalize();
+
         boolean alreadyImported = !db.query(
                 "SELECT value FROM meta WHERE key = 'legacy_imported'", rs -> rs.getString(1)).isEmpty();
         if (alreadyImported) {
+            if (file.exists()) {
+                LOG.warn("Legacy data was already imported into this database; ignoring {}"
+                        + " (remove it if it is a leftover plaintext copy)", source);
+            }
             return;
         }
 
-        File file = new File(dataJsonPath);
-        Path source = file.toPath().toAbsolutePath().normalize();
         if (!file.exists()) {
             if (!allowFreshInstall) {
                 throw new IllegalStateException("No legacy Data.json at " + source
-                        + ": refusing to start with an empty database. Put Data.json there for the first start after"
-                        + " the migration, check DB_PATH if this server was already migrated, or set"
-                        + " DB_ALLOW_FRESH_INSTALL=true for a brand-new install.");
+                        + ": refusing to start with an empty database. Start the bot from the directory that contains"
+                        + " Data.json (or put it there); if this server was already migrated, point DB_PATH at the"
+                        + " existing database; for a brand-new install, set DB_ALLOW_FRESH_INSTALL=true.");
             }
+            LOG.warn("No legacy Data.json at {}: starting with an empty database because DB_ALLOW_FRESH_INSTALL=true;"
+                    + " this database will never import legacy data", source);
             db.update("INSERT INTO meta(key, value) VALUES('legacy_imported', 'true')");
             return;
         }
