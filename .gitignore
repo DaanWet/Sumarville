@@ -1,6 +1,7 @@
 *.iml
 *.xml
 !src/main/resources/logback.xml
+!src/test/resources/logback-test.xml
 target/*
 .superpowers/
 docs/superpowers/
