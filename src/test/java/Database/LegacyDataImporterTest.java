@@ -1,5 +1,6 @@
 package Database;
 
+import ch.qos.logback.classic.Level;
 import Domain.CharacterSheet;
 import Domain.FoodItem;
 import Domain.NpcMessageType;
@@ -39,7 +40,7 @@ class LegacyDataImporterTest {
         Files.writeString(json, SAMPLE);
 
         try (Database db = new Database(dir.resolve("imp.db").toString(), null)) {
-            LegacyDataImporter.run(db, json.toString());
+            LegacyDataImporter.run(db, json.toString(), false);
 
             assertEquals("900", new ConfigRepository(db).get("111", "DM").orElseThrow());
 
@@ -64,8 +65,23 @@ class LegacyDataImporterTest {
             assertTrue(Files.exists(dir.resolve("Data.json.imported")));
 
             // idempotent: second run does nothing, no duplicate rows
-            LegacyDataImporter.run(db, json.toString());
+            LegacyDataImporter.run(db, json.toString(), false);
             assertEquals(1, new FoodRepository(db).findAll("111").size());
+        }
+    }
+
+    @Test
+    void successfulImportReportsGuildCountAndSourceFile(@TempDir Path dir) throws Exception {
+        Path json = dir.resolve("Data.json");
+        Files.writeString(json, "{ \"1\": {}, \"2\": {}, \"3\": {} }");
+        try (Database db = new Database(dir.resolve("log.db").toString(), null);
+             LogCapture logs = new LogCapture(LegacyDataImporter.class)) {
+            LegacyDataImporter.run(db, json.toString(), false);
+
+            List<String> info = logs.messagesAt(Level.INFO);
+            assertEquals(1, info.size());
+            assertTrue(info.get(0).contains("3 guilds"));
+            assertTrue(info.get(0).contains(json.toString()));
         }
     }
 
@@ -74,21 +90,45 @@ class LegacyDataImporterTest {
         Path json = dir.resolve("Data.json");
         Files.writeString(json, "{ \"222\": {} }");
         try (Database db = new Database(dir.resolve("m.db").toString(), null)) {
-            LegacyDataImporter.run(db, json.toString()); // must not throw
+            LegacyDataImporter.run(db, json.toString(), false); // must not throw
             assertTrue(new FoodRepository(db).findAll("222").isEmpty());
             assertEquals(0, new SessionRepository(db).find("222", true).size());
         }
     }
 
     @Test
-    void fileAbsentSetsFlagSoLaterImportIsSkipped(@TempDir Path dir) throws Exception {
+    void missingFileIsRefusedWithItsAbsolutePath(@TempDir Path dir) {
+        String relative = "no-such-dir/Data.json";
+        try (Database db = new Database(dir.resolve("r.db").toString(), null)) {
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> LegacyDataImporter.run(db, relative, false));
+
+            assertTrue(e.getMessage().contains(Path.of(relative).toAbsolutePath().normalize().toString()));
+        }
+    }
+
+    @Test
+    void refusedImportRunsOnceTheFileAppears(@TempDir Path dir) throws Exception {
+        Path json = dir.resolve("Data.json");
+        try (Database db = new Database(dir.resolve("late.db").toString(), null)) {
+            assertThrows(IllegalStateException.class, () -> LegacyDataImporter.run(db, json.toString(), false));
+
+            Files.writeString(json, SAMPLE);
+            LegacyDataImporter.run(db, json.toString(), false);
+
+            assertEquals(1, new FoodRepository(db).findAll("111").size());
+        }
+    }
+
+    @Test
+    void freshInstallWithoutFileSetsFlagSoLaterImportIsSkipped(@TempDir Path dir) throws Exception {
         Path json = dir.resolve("Data.json");
         try (Database db = new Database(dir.resolve("nf.db").toString(), null)) {
-            // First run: no file present -> sets the imported flag, imports nothing
-            LegacyDataImporter.run(db, json.toString());
+            // First run: no file present, fresh install allowed -> sets the imported flag, imports nothing
+            LegacyDataImporter.run(db, json.toString(), true);
             // A Data.json now appears, but the flag must cause it to be skipped
             Files.writeString(json, "{ \"333\": { \"Food\": [ { \"Name\": \"X\", \"Emoji\": \"x\" } ] } }");
-            LegacyDataImporter.run(db, json.toString());
+            LegacyDataImporter.run(db, json.toString(), true);
             assertTrue(new FoodRepository(db).findAll("333").isEmpty());
         }
     }
@@ -98,7 +138,7 @@ class LegacyDataImporterTest {
         Path json = dir.resolve("Data.json");
         Files.writeString(json, "{ \"444\": { \"Dates\": [ \"not-a-date\" ] } }");
         try (Database db = new Database(dir.resolve("bad.db").toString(), null)) {
-            LegacyDataImporter.run(db, json.toString()); // must not throw
+            LegacyDataImporter.run(db, json.toString(), false); // must not throw
             assertEquals(0, new SessionRepository(db).find("444", true).size());
         }
     }

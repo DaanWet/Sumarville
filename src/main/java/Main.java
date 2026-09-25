@@ -33,7 +33,8 @@ public class Main {
         String dbKey = System.getenv("DB_ENCRYPTION_KEY");
         boolean allowUnencrypted = "true".equalsIgnoreCase(System.getenv("DB_ALLOW_UNENCRYPTED"));
         Database db = Database.open(dbPath, dbKey, allowUnencrypted);
-        LegacyDataImporter.run(db, "./Data.json");
+        boolean allowFreshInstall = "true".equalsIgnoreCase(System.getenv("DB_ALLOW_FRESH_INSTALL"));
+        LegacyDataImporter.run(db, "./Data.json", allowFreshInstall);
         Repositories repos = new Repositories(db);
 
         CommandRegistry registry = new CommandRegistry();

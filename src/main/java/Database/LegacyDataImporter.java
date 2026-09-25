@@ -8,6 +8,7 @@ import org.json.simple.parser.JSONParser;
 import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -26,7 +27,12 @@ public final class LegacyDataImporter {
     private LegacyDataImporter() {
     }
 
-    public static void run(Database db, String dataJsonPath) {
+    /**
+     * Imports {@code dataJsonPath} unless that already happened. A missing file only counts as a fresh
+     * install when {@code allowFreshInstall} is set; otherwise startup is refused and the import stays
+     * pending, so a misplaced Data.json can never silently turn into an empty production database.
+     */
+    public static void run(Database db, String dataJsonPath, boolean allowFreshInstall) {
         boolean alreadyImported = !db.query(
                 "SELECT value FROM meta WHERE key = 'legacy_imported'", rs -> rs.getString(1)).isEmpty();
         if (alreadyImported) {
@@ -34,7 +40,14 @@ public final class LegacyDataImporter {
         }
 
         File file = new File(dataJsonPath);
+        Path source = file.toPath().toAbsolutePath().normalize();
         if (!file.exists()) {
+            if (!allowFreshInstall) {
+                throw new IllegalStateException("No legacy Data.json at " + source
+                        + ": refusing to start with an empty database. Put Data.json there for the first start after"
+                        + " the migration, check DB_PATH if this server was already migrated, or set"
+                        + " DB_ALLOW_FRESH_INSTALL=true for a brand-new install.");
+            }
             db.update("INSERT INTO meta(key, value) VALUES('legacy_imported', 'true')");
             return;
         }
@@ -58,6 +71,7 @@ public final class LegacyDataImporter {
             }
             db.update("INSERT INTO meta(key, value) VALUES('legacy_imported', 'true')");
         });
+        LOG.info("Imported legacy data for {} guilds from {}", root.size(), source);
 
         if (!file.renameTo(new File(dataJsonPath + ".imported"))) {
             LOG.warn("Imported Data.json but could not rename it to Data.json.imported");
