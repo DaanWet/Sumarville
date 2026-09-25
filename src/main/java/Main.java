@@ -31,7 +31,8 @@ public class Main {
 
         String dbPath = System.getenv().getOrDefault("DB_PATH", "./data/sumarville.db");
         String dbKey = System.getenv("DB_ENCRYPTION_KEY");
-        Database db = new Database(dbPath, dbKey);
+        boolean allowUnencrypted = "true".equalsIgnoreCase(System.getenv("DB_ALLOW_UNENCRYPTED"));
+        Database db = Database.open(dbPath, dbKey, allowUnencrypted);
         LegacyDataImporter.run(db, "./Data.json");
         Repositories repos = new Repositories(db);
 

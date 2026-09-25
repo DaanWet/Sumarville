@@ -1,5 +1,7 @@
 package Database;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sqlite.mc.SQLiteMCSqlCipherConfig;
 
 import java.io.File;
@@ -22,7 +24,26 @@ import java.util.List;
  */
 public class Database implements AutoCloseable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Database.class);
+
     private final Connection conn;
+
+    /**
+     * Production entry point. Unlike the constructor it never falls back to an unencrypted database
+     * silently: without a key it refuses to start unless {@code allowUnencrypted} is set, and even then
+     * it logs a warning (which also reaches Sentry).
+     */
+    public static Database open(String path, String encryptionKey, boolean allowUnencrypted) {
+        if (encryptionKey == null || encryptionKey.isBlank()) {
+            Path file = Path.of(path).toAbsolutePath().normalize();
+            if (!allowUnencrypted) {
+                throw new IllegalStateException("DB_ENCRYPTION_KEY is not set: refusing to open an unencrypted database at "
+                        + file + ". Set DB_ENCRYPTION_KEY, or DB_ALLOW_UNENCRYPTED=true for local development only.");
+            }
+            LOG.warn("Opening an UNENCRYPTED database at {} (DB_ALLOW_UNENCRYPTED=true); never do this in production", file);
+        }
+        return new Database(path, encryptionKey);
+    }
 
     /**
      * @param path          filesystem path to the database file
