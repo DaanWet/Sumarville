@@ -1,0 +1,27 @@
+[Unit]
+Description=Sumarville Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sumarville
+Group=sumarville
+# Must contain Data.json on the first start; the database goes to ./data/ below it.
+WorkingDirectory=/opt/sumarville
+# BOT_TOKEN, DB_ENCRYPTION_KEY and optionally SENTRY_DSN. Read by systemd as root, so the file can be root-only.
+EnvironmentFile=/etc/sumarville/sumarville.env
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/sumarville/sumarville.jar
+Restart=on-failure
+RestartSec=30
+SuccessExitStatus=143
+
+# Hardening: the bot only needs to write in its own directory.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/sumarville
+
+[Install]
+WantedBy=multi-user.target
