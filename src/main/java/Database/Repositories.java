@@ -8,6 +8,7 @@ public class Repositories {
     private final FoodRepository food;
     private final CharacterRepository characters;
     private final NpcMessageRepository npcMessages;
+    private final GuildDepartureRepository departures;
 
     public Repositories(Database db) {
         this.config = new ConfigRepository(db);
@@ -15,6 +16,11 @@ public class Repositories {
         this.food = new FoodRepository(db);
         this.characters = new CharacterRepository(db);
         this.npcMessages = new NpcMessageRepository(db);
+        this.departures = new GuildDepartureRepository(db);
+    }
+
+    public GuildDepartureRepository departures() {
+        return departures;
     }
 
     public ConfigRepository config() {

@@ -77,6 +77,18 @@ public class SessionReminder {
         }
     }
 
+    /** Cancels every pending reminder of {@code guildId}, e.g. when the bot is removed from it. */
+    public static void cancelAll(String guildId) {
+        String prefix = guildId + "|";
+        map.entrySet().removeIf(e -> {
+            if (!e.getKey().startsWith(prefix)) {
+                return false;
+            }
+            e.getValue().cancel(false);
+            return true;
+        });
+    }
+
     enum RestartAction { FULL, LUNCH_ONLY, NONE }
 
     /** Mirrors {@link #makeMessage}'s 6h reminder window so a restart reschedules consistently. */

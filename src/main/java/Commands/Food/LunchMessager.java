@@ -52,6 +52,18 @@ public class LunchMessager {
         return sb.toString();
     }
 
+    /** Cancels every pending lunch message of {@code guildId}, e.g. when the bot is removed from it. */
+    public static void cancelAll(String guildId) {
+        String prefix = guildId + "|";
+        map.entrySet().removeIf(e -> {
+            if (!e.getKey().startsWith(prefix)) {
+                return false;
+            }
+            e.getValue().cancel(false);
+            return true;
+        });
+    }
+
     public static void cancelMessage(String guildId, LocalDateTime date) {
         String k = key(guildId, date);
         ScheduledFuture<?> task = map.remove(k);

@@ -93,6 +93,7 @@ public class Database implements AutoCloseable {
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, user_id TEXT, name TEXT NOT NULL, picture TEXT)",
                 "CREATE TABLE IF NOT EXISTS npc_messages (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, type TEXT NOT NULL, npc TEXT, message TEXT NOT NULL)",
+                "CREATE TABLE IF NOT EXISTS guild_departures (guild_id TEXT PRIMARY KEY, left_at INTEGER NOT NULL)",
                 "CREATE INDEX IF NOT EXISTS idx_sessions_guild ON sessions(guild_id)",
                 "CREATE INDEX IF NOT EXISTS idx_food_guild ON food(guild_id)",
                 "CREATE INDEX IF NOT EXISTS idx_characters_guild ON characters(guild_id)",
