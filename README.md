@@ -5,7 +5,7 @@
 **Your D&D table's companion on Discord.**
 Roll dice, keep character sheets, plan sessions and let your NPCs remind the party that adventure awaits.
 
-[![Invite Sumarville](https://img.shields.io/badge/Invite-Sumarville-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=402672704&integration_type=0&scope=bot+applications.commands)
+[![Invite Sumarville](https://img.shields.io/badge/Invite-Sumarville-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/oauth2/authorize?client_id=577940186755891211&permissions=403000384&integration_type=0&scope=bot+applications.commands)
 [![Support server](https://img.shields.io/badge/Support-Server-57F287?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/4Atn8t2)
 [![Privacy](https://img.shields.io/badge/Privacy-Policy-grey?style=for-the-badge)](https://sumarville.wettinck.be/privacy-policy.html)
 
@@ -27,7 +27,7 @@ Roll dice, keep character sheets, plan sessions and let your NPCs remind the par
 
 ## 🚀 Get started in 4 steps
 
-1. **[Invite Sumarville](https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=402672704&integration_type=0&scope=bot+applications.commands)** to your server.
+1. **[Invite Sumarville](https://discord.com/oauth2/authorize?client_id=577940186755891211&permissions=403000384&integration_type=0&scope=bot+applications.commands)** to your server.
 2. **Pick the roles** (needs *Manage Server*):
    ```
    /config role setting:DM value:@Dungeon Master
@@ -117,7 +117,7 @@ Sumarville asks for only what it needs:
 | Manage Roles | Give the Player role and pass the DM role |
 | Manage Nicknames | Set a player's nickname to their character's name |
 | View Channels, Send Messages, Embed Links | Reply and post reminders |
-| Add Reactions | Add the food emojis to the lunch poll |
+| Add Reactions, Read Message History, Use External Emojis | Add the food emojis (also custom ones from other servers) to the lunch poll |
 
 It uses **no privileged gateway intents**: it does not read your messages, member list or presence.
 
