@@ -45,11 +45,7 @@ These appear as placeholders in the documents and the texts below. Resolve them 
 ## 3. Publish the legal documents
 
 - [x] Publish **Privacy Policy** ([privacy-policy.md](./privacy-policy.md)) and **Terms of Service** ([terms-of-service.md](./terms-of-service.md)) via GitHub Pages (Appendix B).
-- [ ] **⚠ Bring the Privacy Policy in line with the new build — push only after the deploy** (Pages publishes `docs/` immediately):
-  - §2: remove the row "Direct message content (Dungeon Masters)". Since the slash commands, NPC dialogue is added with `/npc add` and the bot no longer reads direct messages.
-  - §5: mention that stored data is encrypted at rest (SQLCipher).
-  - §6 promises deletion "when the Bot is removed from the server", but no code does this yet. Either build it (also for servers the bot left while offline) or change the text.
-  - Update the "Last updated" date.
+- [x] Bring the Privacy Policy in line with the new build (10 November 2026): the direct-message row is gone, §4 names Sentry for error reports, §5 mentions encryption at rest, and §6 describes deletion 7 days after the bot is removed (built in the same change) plus the 30-day backup rotation.
 - [ ] In **Developer Portal → your application → General Information**, paste:
   - **Privacy Policy URL:** `https://sumarville.wettinck.be/privacy-policy.html`
   - **Terms of Service URL:** `https://sumarville.wettinck.be/terms-of-service.html`
@@ -97,10 +93,8 @@ Removed: the bot no longer requests this intent (commit `c311cbe`).
 
 > **Data stored:** Discord user IDs, user-supplied character names and avatar image URLs, server (guild) IDs, admin-configured role and channel IDs, and user-submitted feature content (calendar session dates, food/lunch entries, and NPC dialogue text).
 > **Storage & location:** stored per-server in a database that is encrypted at rest (SQLCipher, AES-256), on infrastructure controlled solely by the bot operator, located in the EU, with access restricted to the operator. The encryption key is kept outside the database and the code repository.
-> **Retention:** retained while the bot is present in the server; deleted when the bot is removed, or upon a verified erasure request, without undue delay and within 30 days.
-
-> **⚠ Before pasting:** the retention line promises deletion when the bot is removed, which the code does not do yet (see Section 3). Build it or adjust this line together with the Privacy Policy. Backups (not set up yet) must also be rotated within 30 days for this promise to hold.
-> **Sharing:** never sold or shared with third parties; processed only to provide the bot's features.
+> **Retention:** retained while the bot is present in the server. When the bot is removed, the server's data is deleted automatically after a 7-day grace period (re-adding the bot within that period cancels the deletion); servers left while the bot was offline are detected at startup. Encrypted backups are rotated out after 30 days. A verified erasure request is handled without undue delay and within 30 days.
+> **Sharing:** never sold or shared for advertising or analytics; processed only to provide the bot's features. Error reports (server ID, command name, technical error details; no message content) go to Sentry as a processor.
 > **User rights:** users may request access to or deletion of their data via privacy@wettinck.be.
 > **Policy:** full Privacy Policy published at https://sumarville.wettinck.be/privacy-policy.html.
 

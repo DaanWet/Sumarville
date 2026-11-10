@@ -5,7 +5,7 @@ title: Privacy Policy — Sumarville
 # Privacy Policy — Sumarville
 
 **Effective date:** 14 June 2026
-**Last updated:** 14 June 2026
+**Last updated:** 10 November 2026
 
 This Privacy Policy explains what personal data **Sumarville** ("the Bot", "we", "us") collects, why we collect it, how it is used, and the rights you have under the EU General Data Protection Regulation (GDPR). By adding the Bot to a Discord server or interacting with it, you acknowledge the practices described here.
 
@@ -33,8 +33,7 @@ The Bot only processes data that is necessary to provide its features (character
 | **Character name** | When you create a character | Stored on your character sheet; also set as your **server nickname** |
 | **Character avatar / picture URL** | When you create a character | Displayed on your character sheet |
 | **Configured role & channel IDs** | When a server admin runs the setup command | Bot configuration (which role is "Player"/"DM", which channels to use) |
-| **Message content** | Messages you send in the Bot's command channels | To interpret and run your commands. Not retained after processing, **except** where the content itself is the feature you requested (see below) |
-| **Direct message content (Dungeon Masters)** | When a Dungeon Master sends the Bot a direct message | Stored as in-game NPC dialogue for that server |
+| **Command input** | When you use one of the Bot's slash commands | To run the command. Not retained after processing, **except** where the input itself is the feature you requested (see below). The Bot does not read your other messages. |
 | **Feature content** | When you submit it via a command | Calendar session dates, food/lunch entries, and NPC dialogue text you choose to store |
 
 We do **not** collect: your email address, your real name, payment information, your Discord password, or presence/activity status.
@@ -59,20 +58,26 @@ Your data is used **only** to operate the Bot's features for the server you are 
 - share it with third parties for advertising or analytics;
 - use it to build a profile of you across servers.
 
+**Error monitoring.** When a command fails, the Bot sends an error report to [Sentry](https://sentry.io), which processes it on our behalf. A report contains the server (guild) ID, the name of the command, and technical details of the error; it does not contain your messages or character data. Sentry keeps error reports for at most 90 days.
+
 The Bot runs on Discord's platform; your use of Discord is also governed by [Discord's Privacy Policy](https://discord.com/privacy).
 
 ---
 
 ## 5. Where your data is stored
 
-Data is stored on infrastructure controlled solely by the Bot Owner, located in the **European Union**. Access is restricted to the Bot Owner. No personal data is transferred outside the EU/EEA by the Bot.
+Data is stored on infrastructure controlled solely by the Bot Owner, located in the **European Union**. Access is restricted to the Bot Owner. The database is **encrypted at rest** (SQLCipher, AES-256); the encryption key is kept separately from the database and the Bot's source code.
+
+Apart from error reports to Sentry (Section 4), no personal data leaves this infrastructure. Where Sentry processes data outside the EU/EEA, it does so under the EU Standard Contractual Clauses.
 
 ---
 
 ## 6. How long we keep your data
 
 - **Character, configuration, and feature data** is retained for as long as the Bot is present in your server.
-- It is deleted when the Bot is **removed from the server**, or sooner upon a verified erasure request (Section 7).
+- When the Bot is **removed from the server**, its data is kept for **7 days**, so that re-adding the Bot by mistake loses nothing, and is then deleted. Re-adding the Bot within those 7 days cancels the deletion.
+- Deleted data may remain in encrypted backups for up to **30 days** after deletion, after which those backups are destroyed.
+- A verified erasure request (Section 7) deletes data sooner.
 - Erasure requests are honoured **without undue delay, and within 30 days** of verification.
 
 ---
