@@ -10,3 +10,6 @@ docs/superpowers/
 data/
 Data.json
 Data.json.imported
+
+# Internal analysis and roadmap, kept local only
+ANALYSE.md

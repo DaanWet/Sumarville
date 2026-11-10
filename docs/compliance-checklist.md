@@ -1,6 +1,6 @@
 # Compliance checklist — Sumarville
 
-> Practical, step-by-step guide for roadmap item 1 (see [ANALYSE.md](../ANALYSE.md)).
+> Practical, step-by-step guide for roadmap item 1 (compliance).
 > Goal: stay operational past **100 servers** and **10,000 unique users**, and satisfy GDPR.
 > Created 14 June 2026. Updated 10 November 2026.
 
@@ -146,4 +146,7 @@ To reply from the alias, set up "Send mail as" in Gmail/your client (optional �
 ## Notes / links
 
 - This checklist covers roadmap **item 1** only. The `MESSAGE_CONTENT` risk was resolved by roadmap **item 2** (JDA 6 + slash commands); encryption at rest by **item 3** (SQLite + SQLCipher).
-- Sources are listed at the bottom of [ANALYSE.md](../ANALYSE.md).
+- Sources:
+  - [Discord Developers — Getting Started with Privileged Intent Review](https://docs.discord.com/developers/gateway/getting-started-with-privileged-intent-review)
+  - [Discord — Changes to Privileged Intent Access for Discord Apps](https://support-dev.discord.com/hc/en-us/articles/40281523410967-Changes-to-Privileged-Intent-Access-for-Discord-Apps)
+  - [Discord — Message Content Intent Review Policy](https://support-dev.discord.com/hc/en-us/articles/5324827539479-Message-Content-Intent-Review-Policy)
