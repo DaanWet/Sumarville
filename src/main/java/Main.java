@@ -17,10 +17,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.MemberCachePolicy;
-
-import java.util.EnumSet;
 
 public class Main {
 
@@ -48,8 +44,9 @@ public class Main {
         registry.register(new HelpCommand(registry));
 
         String token = System.getenv("BOT_TOKEN");
-        JDA jda = JDABuilder.createDefault(token, EnumSet.of(GatewayIntent.GUILD_MEMBERS))
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
+        // No privileged intents: every command is a slash command, and the caller's member data
+        // (roles, permissions) arrives with the interaction itself.
+        JDA jda = JDABuilder.createDefault(token)
                 .setActivity(Activity.listening("/help"))
                 .addEventListeners(new CommandRouter(registry))
                 .build();

@@ -15,9 +15,11 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -25,6 +27,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.modals.Modal;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import java.awt.Color;
 import java.util.List;
@@ -175,13 +178,7 @@ public class CharacterCommands implements SlashCommand {
         }
         repos.characters().editAttribute(existing.get().id(), attribute, value);
         if (attribute.equals("name")) {
-            String userId = existing.get().userId();
-            if (userId != null) {
-                Member m = guild.getMemberById(userId);
-                if (m != null) {
-                    guild.modifyNickname(m, value).queue();
-                }
-            }
+            setNickname(guild, existing.get().userId(), value);
         }
         event.reply(String.format("Edited %s of %s to %s", attribute, name, value)).queue();
     }
@@ -194,14 +191,21 @@ public class CharacterCommands implements SlashCommand {
             return;
         }
         repos.characters().remove(character.get().id());
-        String userId = character.get().userId();
-        if (userId != null) {
-            Member m = guild.getMemberById(userId);
-            if (m != null) {
-                guild.modifyNickname(m, null).queue();
-            }
-        }
+        setNickname(guild, character.get().userId(), null);
         event.reply("Successfully removed " + name).queue();
+    }
+
+    /**
+     * Sets (or with {@code null} resets) the server nickname of the character's owner. The member is fetched
+     * over REST because the bot keeps no member cache (no GUILD_MEMBERS intent). A member who left is skipped.
+     */
+    private static void setNickname(Guild guild, String userId, String nickname) {
+        if (userId == null) {
+            return;
+        }
+        guild.retrieveMemberById(userId).queue(
+                m -> guild.modifyNickname(m, nickname).queue(),
+                new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MEMBER));
     }
 
     private void show(SlashCommandInteractionEvent event, Guild guild) {
@@ -231,8 +235,9 @@ public class CharacterCommands implements SlashCommand {
         } else {
             eb.setTitle("Players");
             for (CharacterSheet c : list) {
-                Member m = c.isNpc() ? null : guild.getMemberById(c.userId());
-                String who = c.isNpc() ? "NPC" : (m != null ? m.getAsMention() : "Unknown");
+                // A mention needs only the user ID, so no member lookup (and no member cache) is needed.
+                String who = c.isNpc() ? "NPC"
+                        : (c.userId() != null ? UserSnowflake.fromId(c.userId()).getAsMention() : "Unknown");
                 eb.addField(c.name(), who, true);
             }
         }

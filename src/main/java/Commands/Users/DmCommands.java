@@ -3,6 +3,7 @@ package Commands.Users;
 import Commands.Framework.SlashCommand;
 import Database.Repositories;
 import Players.DM;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -32,7 +33,7 @@ public class DmCommands implements SlashCommand {
     public List<SlashCommandData> getCommandData() {
         return List.of(Commands.slash("dm", "Claim or pass the Dungeon Master role")
                 .addSubcommands(
-                        new SubcommandData("claim", "Claim the DM role if nobody has it"),
+                        new SubcommandData("claim", "Take the DM role (needs the Manage Roles permission)"),
                         new SubcommandData("pass", "Pass the DM role to someone else")
                                 .addOptions(new OptionData(OptionType.USER, "user", "New Dungeon Master", true))));
     }
@@ -46,25 +47,27 @@ public class DmCommands implements SlashCommand {
             return;
         }
         Role dmRole = new DM(guild, repos.config()).getRole();
-        List<Member> currentDms = guild.getMembersWithRoles(dmRole);
 
         String sub = event.getSubcommandName();
         if (sub == null) {
             event.reply("Unknown subcommand.").setEphemeral(true).queue();
             return;
         }
+        // The bot has no GUILD_MEMBERS intent, so it cannot list who holds the DM role. It only looks at
+        // the caller, whose roles and permissions arrive with the interaction.
         if (sub.equals("claim")) {
-            if (currentDms.isEmpty()) {
+            if (member.hasPermission(Permission.MANAGE_ROLES)) {
                 guild.addRoleToMember(member, dmRole).queue();
                 event.reply("You are now the Dungeon Master.").queue();
             } else {
-                event.reply("There already is a Dungeon Master.").setEphemeral(true).queue();
+                event.reply("Only members with the Manage Roles permission can claim the DM role. "
+                        + "Ask the current DM to use /dm pass.").setEphemeral(true).queue();
             }
             return;
         }
 
         // pass
-        if (currentDms.isEmpty() || !currentDms.get(0).equals(member)) {
+        if (!member.getRoles().contains(dmRole)) {
             event.reply("You are not the DM, so you can't pass the role.").setEphemeral(true).queue();
             return;
         }
